@@ -9,7 +9,7 @@ app = FastAPI(title="QR Redirect Service")
 # CONFIG
 # =========================================================
 TARGET_URL = "https://digital-links.vercel.app"
-BASE_URL = "https://apical-elianna-indicial.ngrok-free.dev"  # replace with domain/ngrok in real use
+BASE_URL = "https://social-media-vmfr.onrender.com"  # replace with domain/ngrok in real use
 
 # simple in-memory counter (DB later)
 SCAN_COUNT = 0
