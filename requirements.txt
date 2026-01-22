@@ -1,8 +1,27 @@
+# FastAPI and web server
 fastapi
 uvicorn[standard]
+python-multipart
+jinja2
+
+# Database
 sqlalchemy
 asyncpg
+alembic
+
+# Authentication
+python-jose[cryptography]
+passlib==1.7.4
+bcrypt==3.2.2
+
+# QR Code generation
 qrcode[pil]
-user-agents
-httpx
-python-multipart
+pillow
+
+# Validation
+pydantic
+pydantic-settings
+email-validator
+
+# Utilities
+python-dotenv
