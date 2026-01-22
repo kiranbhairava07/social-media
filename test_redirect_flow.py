@@ -1,7 +1,7 @@
 import requests
 import json
 
-BASE_URL = "http://localhost:8000"
+BASE_URL = "https://social-media-vmfr.onrender.com"
 
 def test_complete_flow():
     print("🔍 Testing Complete QR Redirect Flow\n")
