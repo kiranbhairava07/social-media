@@ -3,7 +3,7 @@ from typing import Optional
 
 class Settings(BaseSettings):
     # Database
-    DATABASE_URL: str = "postgresql+asyncpg://postgres:Kiran%40123@127.0.0.1:5432/qr_manager"
+    DATABASE_URL: str = "postgresql+asyncpg://qr_manager_user:6Vnr63gWlKZvcfsvyF2W8BgxM3GkZQTw@dpg-d5ot6u24d50c739pp190-a.oregon-postgres.render.com:5432/qr_manager"
     
     # JWT
     SECRET_KEY: str = "your-secret-key-change-in-production"
