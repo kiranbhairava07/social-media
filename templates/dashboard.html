@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>QR Manager</title>
+
+<style>
+:root {
+    --primary:#22c55e;
+    --primary-dark:#16a34a;
+    --bg:#f6faf7;
+    --card:#ffffff;
+    --border:#e5efe8;
+    --text:#0f172a;
+    --muted:#64748b;
+}
+
+*{margin:0;padding:0;box-sizing:border-box}
+
+body{
+    font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+    background:var(--bg);
+    color:var(--text);
+}
+
+/* ===== Layout ===== */
+.app{
+    display:grid;
+    grid-template-columns:260px 1fr;
+    min-height:100vh;
+}
+
+/* ===== Sidebar ===== */
+.sidebar{
+    background:var(--card);
+    border-right:1px solid var(--border);
+    padding:24px;
+}
+
+.brand{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    font-weight:800;
+    font-size:18px;
+    margin-bottom:32px;
+}
+
+.brand-icon{
+    background:var(--primary);
+    color:#fff;
+    padding:8px 10px;
+    border-radius:8px;
+}
+
+.nav{
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+}
+
+.nav a{
+    padding:12px 14px;
+    border-radius:8px;
+    text-decoration:none;
+    color:var(--muted);
+    font-weight:500;
+}
+
+.nav a.active,
+.nav a:hover{
+    background:#ecfdf5;
+    color:var(--primary-dark);
+}
+
+/* ===== Main ===== */
+.main{
+    padding:28px 32px;
+}
+
+/* ===== Topbar ===== */
+.topbar{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:24px;
+}
+
+.search{
+    flex:1;
+    max-width:420px;
+}
+
+.search input{
+    width:100%;
+    padding:12px 14px;
+    border-radius:10px;
+    border:1px solid var(--border);
+}
+
+.top-actions{
+    display:flex;
+    gap:12px;
+}
+
+/* ===== Buttons ===== */
+.btn{
+    padding:10px 16px;
+    border-radius:10px;
+    border:none;
+    font-weight:600;
+    cursor:pointer;
+}
+
+.btn-primary{
+    background:var(--primary);
+    color:#fff;
+}
+
+.btn-primary:hover{
+    background:var(--primary-dark);
+}
+
+.btn-outline{
+    background:#fff;
+    border:1px solid var(--border);
+}
+
+/* ===== Card ===== */
+.card{
+    background:var(--card);
+    border:1px solid var(--border);
+    border-radius:14px;
+    padding:20px;
+}
+
+/* ===== Table ===== */
+.table{
+    width:100%;
+    border-collapse:collapse;
+}
+
+.table th{
+    text-align:left;
+    font-size:12px;
+    color:var(--muted);
+    padding-bottom:12px;
+}
+
+.table td{
+    padding:16px 0;
+    border-top:1px solid var(--border);
+    vertical-align:middle;
+}
+
+.badge{
+    padding:4px 10px;
+    border-radius:999px;
+    font-size:12px;
+    font-weight:600;
+}
+
+.badge-on{
+    background:#dcfce7;
+    color:#166534;
+}
+
+.badge-off{
+    background:#fee2e2;
+    color:#991b1b;
+}
+
+.actions{
+    display:flex;
+    gap:10px;
+}
+
+.icon-btn{
+    background:none;
+    border:none;
+    cursor:pointer;
+    font-size:16px;
+}
+
+/* ===== Modal ===== */
+.modal{
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,.45);
+    display:none;
+    align-items:center;
+    justify-content:center;
+}
+
+.modal.show{display:flex}
+
+.modal-content{
+    background:#fff;
+    border-radius:16px;
+    width:100%;
+    max-width:900px;
+    padding:28px;
+}
+
+.modal-grid{
+    display:grid;
+    grid-template-columns:1.2fr 1fr;
+    gap:24px;
+}
+
+.input{
+    width:100%;
+    padding:12px;
+    border-radius:10px;
+    border:1px solid var(--border);
+    margin-top:6px;
+}
+
+.preview{
+    border:1px dashed var(--border);
+    border-radius:14px;
+    height:260px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    color:var(--muted);
+    font-weight:600;
+}
+
+.error{
+    background:#fee2e2;
+    color:#991b1b;
+    padding:12px;
+    border-radius:8px;
+    margin-bottom:12px;
+    display:none;
+}
+.error.show{display:block}
+</style>
+</head>
+
+<body>
+
+<div class="app">
+
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="brand">
+            <div class="brand-icon">QR</div>
+            QR Manager
+        </div>
+
+        <nav class="nav">
+            <a href="/dashboard" class="active">QR Codes</a>
+            <a href="/analytics">Analytics</a>
+            <a href="#">Campaigns</a>
+            <a href="#">Team Settings</a>
+        </nav>
+
+    </aside>
+
+    <!-- Main -->
+    <main class="main">
+
+        <!-- Topbar -->
+        <div class="topbar">
+            <div class="search">
+                <input placeholder="Search codes, URLs, or campaigns…">
+            </div>
+            <div class="top-actions">
+                <button class="btn btn-outline" onclick="logout()">Logout</button>
+                <button class="btn btn-primary" onclick="showCreateModal()">+ Create New QR</button>
+            </div>
+        </div>
+
+        <!-- QR Table -->
+        <div class="card">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Name / Short Code</th>
+                        <th>Destination URL</th>
+                        <th>Scans</th>
+                        <th>Status</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody id="qrList"></tbody>
+            </table>
+        </div>
+
+    </main>
+</div>
+
+<!-- Create QR Modal -->
+<div class="modal" id="createModal">
+    <div class="modal-content">
+        <h2 style="margin-bottom:20px;">Create New QR</h2>
+
+        <div class="error" id="createError"></div>
+
+        <form id="createForm">
+            <div class="modal-grid">
+                <div>
+                    <label>Target URL</label>
+                    <input class="input" id="targetUrl" required>
+
+                    <label style="margin-top:14px;">Short Code</label>
+                    <input class="input" id="code" required>
+
+                    <button class="btn btn-primary" style="margin-top:20px;">
+                        Create QR Code
+                    </button>
+                </div>
+
+                <div>
+                    <div class="preview">Live QR Preview</div>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+
+<!-- View QR Modal -->
+<div class="modal" id="viewQRModal">
+    <div class="modal-content" style="max-width:700px">
+        <h2 style="margin-bottom:16px;">QR Code Details</h2>
+
+        <div id="viewQRBody" style="display:grid;grid-template-columns:1fr 1fr;gap:24px">
+            <!-- Filled dynamically -->
+        </div>
+
+        <div style="margin-top:24px;text-align:right">
+            <button class="btn btn-outline" onclick="closeViewQR()">Close</button>
+        </div>
+    </div>
+</div>
+
+
+<script>
+const API = 'http://localhost:8000';
+
+function getToken(){ return localStorage.getItem('token'); }
+
+function checkAuth(){
+    if(!getToken()) window.location.href='/';
+}
+
+function logout(){
+    localStorage.removeItem('token');
+    window.location.href='/';
+}
+
+async function loadQRCodes(){
+    const res = await fetch(`${API}/api/qr`,{
+        headers:{Authorization:`Bearer ${getToken()}`}
+    });
+
+    if(res.status===401){ logout(); return; }
+
+    const qrCodes = await res.json();
+    const list = document.getElementById('qrList');
+
+    if(qrCodes.length===0){
+        list.innerHTML = `
+            <tr>
+                <td colspan="5" style="padding:40px;text-align:center;color:#64748b">
+                    No QR codes yet. Create your first one.
+                </td>
+            </tr>`;
+        return;
+    }
+
+    list.innerHTML = qrCodes.map(qr=>`
+        <tr>
+            <td>
+                <strong>${qr.code}</strong><br>
+                <small>/r/${qr.code}</small>
+            </td>
+            <td>${qr.target_url}</td>
+            <td><strong>${qr.scan_count}</strong></td>
+            <td>
+                <span class="badge ${qr.is_active?'badge-on':'badge-off'}">
+                    ${qr.is_active?'Active':'Inactive'}
+                </span>
+            </td>
+            <td class="actions">
+                <button class="icon-btn" onclick="viewQR(${qr.id})">👁️</button>
+                <button class="icon-btn" onclick="downloadQR(${qr.id})">⬇️</button>
+                <button class="icon-btn" onclick="toggleActive(${qr.id},${qr.is_active})">✏️</button>
+                <button class="icon-btn" onclick="deleteQR(${qr.id})">🗑️</button>
+            </td>
+
+        </tr>
+    `).join('');
+}
+
+function showCreateModal(){
+    document.getElementById('createModal').classList.add('show');
+}
+
+function closeModal(){
+    document.getElementById('createModal').classList.remove('show');
+    document.getElementById('createForm').reset();
+    document.getElementById('createError').classList.remove('show');
+}
+
+document.getElementById('createForm').addEventListener('submit',async e=>{
+    e.preventDefault();
+    const code=document.getElementById('code').value;
+    const targetUrl=document.getElementById('targetUrl').value;
+
+    const res = await fetch(`${API}/api/qr`,{
+        method:'POST',
+        headers:{
+            'Content-Type':'application/json',
+            Authorization:`Bearer ${getToken()}`
+        },
+        body:JSON.stringify({code,target_url:targetUrl})
+    });
+
+    const data = await res.json();
+    if(!res.ok){
+        const err=document.getElementById('createError');
+        err.textContent=data.detail;
+        err.classList.add('show');
+        return;
+    }
+
+    closeModal();
+    loadQRCodes();
+});
+
+async function downloadQR(qrId) {
+    try {
+        const res = await fetch(`${API}/api/qr/${qrId}/image`, {
+            headers: {
+                Authorization: `Bearer ${getToken()}`
+            }
+        });
+
+        if (!res.ok) {
+            alert("Failed to download QR image");
+            return;
+        }
+
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+
+        // Create temporary <a> to force download
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `qr-${qrId}.png`;
+        document.body.appendChild(a);
+        a.click();
+
+        // Cleanup
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+
+    } catch (err) {
+        console.error(err);
+        alert("Error downloading QR");
+    }
+}
+
+
+async function toggleActive(id,isActive){
+    await fetch(`${API}/api/qr/${id}`,{
+        method:'PUT',
+        headers:{
+            'Content-Type':'application/json',
+            Authorization:`Bearer ${getToken()}`
+        },
+        body:JSON.stringify({is_active:!isActive})
+    });
+    loadQRCodes();
+}
+function closeViewQR(){
+    document.getElementById('viewQRModal').classList.remove('show');
+}
+
+async function viewQR(qrId) {
+    try {
+        // === API 1: Fetch QR details ===
+        const res = await fetch(`${API}/api/qr/${qrId}`, {
+            headers: {
+                Authorization: `Bearer ${getToken()}`
+            }
+        });
+
+        if (!res.ok) {
+            alert("Failed to load QR details");
+            return;
+        }
+
+        const qr = await res.json();
+
+        // === API 2: Fetch QR image with auth (BLOB) ===
+        const imageUrl = await loadQRImage(qr.id);
+
+        // === Render modal ===
+        document.getElementById("viewQRBody").innerHTML = `
+            <div>
+                <p><strong>QR Code</strong><br>${qr.code}</p>
+                <p><strong>Target URL</strong><br>${qr.target_url}</p>
+                <p><strong>Status</strong><br>${qr.is_active ? "Active" : "Inactive"}</p>
+                <p><strong>Total Scans</strong><br>${qr.scan_count}</p>
+                <p><strong>Created At</strong><br>
+                    ${new Date(qr.created_at).toLocaleString()}
+                </p>
+                <p><strong>Last Updated</strong><br>
+                    ${new Date(qr.updated_at).toLocaleString()}
+                </p>
+
+                <div style="margin-top:16px;display:flex;gap:10px">
+                    <button class="btn btn-primary"
+                        onclick="downloadQR(${qr.id})">
+                        Download QR
+                    </button>
+
+                    <button class="btn btn-outline"
+                        onclick="window.location.href='/analytics?qr=${qr.id}'">
+                        View Analytics
+                    </button>
+                </div>
+            </div>
+
+            <div style="text-align:center">
+                <img
+                    src="${imageUrl}"
+                    alt="QR Code Image"
+                    style="
+                        width:240px;
+                        height:240px;
+                        border:1px solid #e5efe8;
+                        border-radius:12px;
+                        background:white;
+                    "
+                />
+                <p style="margin-top:8px;font-size:13px;color:#64748b">
+                    Scan to open redirect URL
+                </p>
+            </div>
+        `;
+
+        document.getElementById("viewQRModal").classList.add("show");
+
+    } catch (err) {
+        console.error(err);
+        alert("Something went wrong while loading QR");
+    }
+}
+
+async function loadQRImage(qrId) {
+    const res = await fetch(`${API}/api/qr/${qrId}/image`, {
+        headers: {
+            Authorization: `Bearer ${getToken()}`
+        }
+    });
+
+    if (!res.ok) throw new Error("Image load failed");
+
+    const blob = await res.blob();
+    return URL.createObjectURL(blob);
+}
+
+
+async function deleteQR(id){
+    if(!confirm('Delete this QR code?')) return;
+    await fetch(`${API}/api/qr/${id}`,{
+        method:'DELETE',
+        headers:{Authorization:`Bearer ${getToken()}`}
+    });
+    loadQRCodes();
+}
+
+checkAuth();
+loadQRCodes();
+</script>
+
+</body>
+</html>

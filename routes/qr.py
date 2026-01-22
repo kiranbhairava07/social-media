@@ -558,52 +558,104 @@ async def delete_qr_code(
 # ============================================
 # GET QR CODE IMAGE (PNG)
 # ============================================
+# @router.get("/{qr_id}/image")
+# async def get_qr_image(
+#     qr_id: int,
+#     db: AsyncSession = Depends(get_db),
+#     current_user: User = Depends(get_current_user)
+# ):
+#     """
+#     Generate and download QR code image as PNG.
+#     """
+#     result = await db.execute(
+#         select(QRCode).where(and_(QRCode.id == qr_id, QRCode.created_by == current_user.id))
+#     )
+#     qr_code = result.scalar_one_or_none()
+    
+#     if not qr_code:
+#         raise HTTPException(
+#             status_code=status.HTTP_404_NOT_FOUND,
+#             detail="QR code not found"
+#         )
+    
+#     # Generate QR code image
+#     qr = qrcode.QRCode(
+#         version=1,
+#         error_correction=qrcode.constants.ERROR_CORRECT_L,
+#         box_size=10,
+#         border=4,
+#     )
+    
+#     # QR points to the redirect URL
+#     redirect_url = f"{settings.BASE_URL}/r/{qr_code.code}"
+#     qr.add_data(redirect_url)
+#     qr.make(fit=True)
+    
+#     img = qr.make_image(fill_color="black", back_color="white")
+    
+#     # Save to buffer
+#     buffer = io.BytesIO()
+#     img.save(buffer, format="PNG")
+#     buffer.seek(0)
+    
+#     return Response(
+#         content=buffer.getvalue(),
+#         media_type="image/png",
+#         headers={
+#             "Content-Disposition": f"attachment; filename=qr-{qr_code.code}.png"
+#         }
+#     )
+
 @router.get("/{qr_id}/image")
 async def get_qr_image(
     qr_id: int,
+    download: bool = False,   # 👈 add this
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
     """
-    Generate and download QR code image as PNG.
+    Generate QR code image (view or download).
     """
     result = await db.execute(
-        select(QRCode).where(and_(QRCode.id == qr_id, QRCode.created_by == current_user.id))
+        select(QRCode).where(
+            and_(QRCode.id == qr_id, QRCode.created_by == current_user.id)
+        )
     )
     qr_code = result.scalar_one_or_none()
-    
+
     if not qr_code:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="QR code not found"
         )
-    
-    # Generate QR code image
+
     qr = qrcode.QRCode(
         version=1,
         error_correction=qrcode.constants.ERROR_CORRECT_L,
         box_size=10,
         border=4,
     )
-    
-    # QR points to the redirect URL
+
     redirect_url = f"{settings.BASE_URL}/r/{qr_code.code}"
     qr.add_data(redirect_url)
     qr.make(fit=True)
-    
+
     img = qr.make_image(fill_color="black", back_color="white")
-    
-    # Save to buffer
+
     buffer = io.BytesIO()
     img.save(buffer, format="PNG")
     buffer.seek(0)
-    
+
+    headers = {}
+    if download:
+        headers["Content-Disposition"] = (
+            f"attachment; filename=qr-{qr_code.code}.png"
+        )
+
     return Response(
         content=buffer.getvalue(),
         media_type="image/png",
-        headers={
-            "Content-Disposition": f"attachment; filename=qr-{qr_code.code}.png"
-        }
+        headers=headers
     )
 
 

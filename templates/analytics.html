@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>QR Analytics</title>
+
+<style>
+:root{
+    --primary:#22c55e;
+    --primary-dark:#16a34a;
+    --bg:#f6faf7;
+    --card:#ffffff;
+    --border:#e5efe8;
+    --text:#0f172a;
+    --muted:#64748b;
+}
+
+*{margin:0;padding:0;box-sizing:border-box}
+
+body{
+    font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+    background:var(--bg);
+    color:var(--text);
+}
+
+/* ===== Layout ===== */
+.app{
+    display:grid;
+    grid-template-columns:260px 1fr;
+    min-height:100vh;
+}
+
+.main{
+    padding:28px 32px;
+}
+
+/* ===== Sidebar ===== */
+.sidebar{
+    background:var(--card);
+    border-right:1px solid var(--border);
+    padding:24px;
+}
+
+.brand{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    font-weight:800;
+    font-size:18px;
+    margin-bottom:32px;
+}
+
+.brand-icon{
+    background:var(--primary);
+    color:#fff;
+    padding:8px 10px;
+    border-radius:8px;
+}
+
+.nav{
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+}
+
+.nav a{
+    padding:12px 14px;
+    border-radius:8px;
+    text-decoration:none;
+    color:var(--muted);
+    font-weight:500;
+}
+
+.nav a.active,
+.nav a:hover{
+    background:#ecfdf5;
+    color:var(--primary-dark);
+}
+
+/* ===== Header ===== */
+.header{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:24px;
+}
+
+.header h1{
+    font-size:22px;
+    font-weight:800;
+}
+
+.live{
+    background:#dcfce7;
+    color:#166534;
+    font-size:11px;
+    padding:3px 8px;
+    border-radius:999px;
+    margin-left:6px;
+}
+
+.header-actions{
+    display:flex;
+    gap:10px;
+}
+
+/* ===== Buttons ===== */
+.btn{
+    padding:10px 16px;
+    border-radius:10px;
+    border:none;
+    font-weight:600;
+    cursor:pointer;
+}
+
+.btn-outline{
+    background:#fff;
+    border:1px solid var(--border);
+}
+
+.btn-primary{
+    background:var(--primary);
+    color:#fff;
+}
+
+.btn-primary:hover{
+    background:var(--primary-dark);
+}
+
+/* ===== Selector ===== */
+.selector{
+    background:var(--card);
+    border:1px solid var(--border);
+    border-radius:14px;
+    padding:16px;
+    margin-bottom:20px;
+}
+
+.selector label{
+    font-weight:600;
+    font-size:14px;
+}
+
+.selector select{
+    margin-top:8px;
+    width:100%;
+    padding:12px;
+    border-radius:10px;
+    border:1px solid var(--border);
+}
+
+/* ===== Stats ===== */
+.stats{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+    gap:16px;
+    margin-bottom:24px;
+}
+
+.stat-card{
+    background:var(--card);
+    border:1px solid var(--border);
+    border-radius:14px;
+    padding:18px;
+}
+
+.stat-card h4{
+    font-size:13px;
+    color:var(--muted);
+    margin-bottom:6px;
+}
+
+.stat-value{
+    font-size:28px;
+    font-weight:800;
+}
+
+.stat-sub{
+    font-size:12px;
+    color:var(--primary);
+    margin-top:6px;
+}
+
+/* ===== Sections ===== */
+.section{
+    background:var(--card);
+    border:1px solid var(--border);
+    border-radius:14px;
+    padding:20px;
+    margin-bottom:20px;
+}
+
+.section-title{
+    font-weight:700;
+    margin-bottom:14px;
+}
+
+/* ===== Hourly Chart ===== */
+.chart{
+    height:220px;
+    display:flex;
+    align-items:flex-end;
+    gap:4px;
+}
+
+.bar{
+    flex:1;
+    background:var(--primary);
+    border-radius:4px 4px 0 0;
+    min-height:4px;
+}
+
+/* ===== Grid ===== */
+.grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:20px;
+}
+
+.circle{
+    width:140px;
+    height:140px;
+    border-radius:50%;
+    border:10px solid var(--primary);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-weight:800;
+    font-size:24px;
+}
+
+/* ===== Table ===== */
+table{
+    width:100%;
+    border-collapse:collapse;
+}
+
+th{
+    text-align:left;
+    font-size:12px;
+    color:var(--muted);
+    padding-bottom:10px;
+}
+
+td{
+    padding:12px 0;
+    border-top:1px solid var(--border);
+    font-size:14px;
+}
+
+.no-data{
+    text-align:center;
+    padding:40px;
+    color:var(--muted);
+}
+</style>
+</head>
+
+<body>
+
+<div class="app">
+
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="brand">
+            <div class="brand-icon">QR</div>
+            QR Manager
+        </div>
+
+        <nav class="nav">
+            <a href="/dashboard" data-page="dashboard">QR Codes</a>
+            <a href="/analytics" data-page="analytics">Analytics</a>
+            <a href="#">Campaigns</a>
+            <a href="#">Team Settings</a>
+        </nav>
+    </aside>
+
+    <!-- Main -->
+    <main class="main">
+
+        <!-- Header -->
+        <div class="header">
+            <div>
+                <h1>
+                    QR Code Analytics
+                    <span class="live">LIVE</span>
+                </h1>
+                <p style="font-size:13px;color:var(--muted)">
+                    Real-time scan data and visitor insights
+                </p>
+            </div>
+
+            <div class="header-actions">
+                <button class="btn btn-outline" onclick="window.location.href='/dashboard'">
+                    ← QR Codes
+                </button>
+                <button class="btn btn-primary">Export Report</button>
+            </div>
+        </div>
+
+        <!-- Selector -->
+        <div class="selector">
+            <label>Select QR Code</label>
+            <select id="qrSelect" onchange="loadAnalytics()">
+                <option>Loading...</option>
+            </select>
+        </div>
+
+        <div id="analyticsContent"></div>
+
+    </main>
+</div>
+
+<script>
+const API = 'http://localhost:8000';
+
+function getToken(){
+    return localStorage.getItem('token');
+}
+
+function checkAuth(){
+    if(!getToken()) window.location.href='/';
+}
+
+async function loadQRList(){
+    const res = await fetch(`${API}/api/qr`,{
+        headers:{Authorization:`Bearer ${getToken()}`}
+    });
+
+    if(res.status===401){ window.location.href='/'; return; }
+
+    const qrCodes = await res.json();
+    const select = document.getElementById('qrSelect');
+
+    if(qrCodes.length===0){
+        select.innerHTML='<option>No QR codes</option>';
+        return;
+    }
+
+    select.innerHTML = qrCodes.map(qr =>
+        `<option value="${qr.id}">${qr.code} (${qr.scan_count} scans)</option>`
+    ).join('');
+
+    loadAnalytics();
+}
+
+async function loadAnalytics(){
+    const qrId = document.getElementById('qrSelect').value;
+    const content = document.getElementById('analyticsContent');
+
+    if(!qrId){
+        content.innerHTML='<div class="no-data">Select a QR code</div>';
+        return;
+    }
+
+    const res = await fetch(`${API}/api/qr/${qrId}/analytics`,{
+        headers:{Authorization:`Bearer ${getToken()}`}
+    });
+
+    const data = await res.json();
+    const max = Math.max(...data.hourly_breakdown.map(h=>h.count),1);
+
+    content.innerHTML = `
+        <div class="stats">
+            <div class="stat-card">
+                <h4>Total Scans</h4>
+                <div class="stat-value">${data.total_scans}</div>
+            </div>
+            <div class="stat-card">
+                <h4>Today</h4>
+                <div class="stat-value">${data.scans_today}</div>
+            </div>
+            <div class="stat-card">
+                <h4>Peak Hour</h4>
+                <div class="stat-value">${data.peak_hour || '-'}</div>
+            </div>
+            <div class="stat-card">
+                <h4>Mobile %</h4>
+                <div class="stat-value">${data.mobile_percentage}%</div>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="section-title">Hourly Scan Activity</div>
+            <div class="chart">
+                ${data.hourly_breakdown.map(h=>{
+                    const height=(h.count/max)*100;
+                    return `<div class="bar" style="height:${height}%"></div>`;
+                }).join('')}
+            </div>
+        </div>
+
+        <div class="grid">
+            <div class="section">
+                <div class="section-title">Geographic Reach</div>
+                ${data.top_cities.length ? data.top_cities.map(l=>`
+                    <p>${l.city || '-'}, ${l.country || '-'} — <strong>${l.count}</strong></p>
+                `).join('') : '<p class="no-data">No location data</p>'}
+            </div>
+
+            <div class="section">
+                <div class="section-title">Device Details</div>
+                <div class="circle">${data.mobile_percentage}%</div>
+                <p style="margin-top:10px">Mobile: ${data.device_breakdown.mobile}</p>
+                <p>Desktop: ${data.device_breakdown.desktop}</p>
+                <p>Tablet: ${data.device_breakdown.tablet}</p>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="section-title">Recent Activity</div>
+            <table>
+                <tr>
+                    <th>Time</th>
+                    <th>Device</th>
+                    <th>Location</th>
+                </tr>
+                ${data.recent_scans.length ? data.recent_scans.map(s=>`
+                    <tr>
+                        <td>${new Date(s.scanned_at).toLocaleString()}</td>
+                        <td>${s.device_type || '-'} · ${s.browser || '-'}</td>
+                        <td>${s.city || '-'}, ${s.country || '-'}</td>
+                    </tr>
+                `).join('') : '<tr><td colspan="3" class="no-data">No scans yet</td></tr>'}
+            </table>
+        </div>
+    `;
+}
+
+/* Sidebar active state */
+const path = window.location.pathname;
+document.querySelectorAll('.nav a').forEach(link=>{
+    if(path.includes(link.getAttribute('href'))){
+        link.classList.add('active');
+    }
+});
+
+checkAuth();
+loadQRList();
+</script>
+
+</body>
+</html>

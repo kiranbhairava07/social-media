@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Employee Login</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; }
+        .login-container { background: white; border-radius: 12px; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3); width: 100%; max-width: 420px; overflow: hidden; }
+        .login-header { background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%); color: white; padding: 40px 20px; text-align: center; }
+        .lock-icon { width: 50px; height: 50px; background: rgba(255, 255, 255, 0.2); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 15px; font-size: 28px; }
+        .login-header h1 { font-size: 26px; font-weight: 600; margin-bottom: 8px; }
+        .login-header p { font-size: 14px; opacity: 0.9; }
+        .login-form { padding: 30px; }
+        .form-group { margin-bottom: 24px; }
+        label { display: block; font-size: 14px; font-weight: 600; color: #1a202c; margin-bottom: 8px; }
+        input[type="email"], input[type="password"] { width: 100%; padding: 12px 14px; border: 1.5px solid #e2e8f0; border-radius: 8px; font-size: 14px; transition: all 0.3s ease; background: #f8f9fa; }
+        input[type="email"]:focus, input[type="password"]:focus { outline: none; border-color: #2a5298; background: white; box-shadow: 0 0 0 3px rgba(42, 82, 152, 0.1); }
+        .sign-in-btn { width: 100%; padding: 12px; background: linear-gradient(135deg, #2a5298 0%, #1e3c72 100%); color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer; transition: all 0.3s ease; margin-bottom: 16px; }
+        .sign-in-btn:hover { transform: translateY(-2px); box-shadow: 0 10px 20px rgba(42, 82, 152, 0.2); }
+        .sign-in-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+        .error-message { background: #fed7d7; color: #c53030; padding: 12px; border-radius: 6px; font-size: 13px; margin-bottom: 16px; display: none; }
+        .error-message.show { display: block; }
+        .success-message { background: #c6f6d5; color: #22543d; padding: 12px; border-radius: 6px; font-size: 13px; margin-bottom: 16px; display: none; }
+        .success-message.show { display: block; }
+        .loading { display: none; width: 16px; height: 16px; border: 2px solid rgba(255, 255, 255, 0.3); border-top: 2px solid white; border-radius: 50%; animation: spin 0.8s linear infinite; margin-right: 8px; vertical-align: middle; }
+        .loading.show { display: inline-block; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-header">
+            <div class="lock-icon">🔒</div>
+            <h1>Employee Login</h1>
+            <p>QR Code Management System</p>
+        </div>
+
+        <div class="login-form">
+            <div class="error-message" id="errorMessage"></div>
+            <div class="success-message" id="successMessage"></div>
+
+            <form id="loginForm">
+                <div class="form-group">
+                    <label for="email">Email</label>
+                    <input type="email" id="email" placeholder="marketing@company.com" required autocomplete="email" />
+                </div>
+
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" placeholder="Enter password" required autocomplete="current-password" />
+                </div>
+
+                <button type="submit" class="sign-in-btn" id="signInBtn">
+                    <span class="loading" id="loadingSpinner"></span>
+                    Sign In
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const API = 'http://localhost:8000';
+        
+        const form = document.getElementById('loginForm');
+        const emailInput = document.getElementById('email');
+        const passwordInput = document.getElementById('password');
+        const signInBtn = document.getElementById('signInBtn');
+        const loadingSpinner = document.getElementById('loadingSpinner');
+        const errorMessage = document.getElementById('errorMessage');
+        const successMessage = document.getElementById('successMessage');
+
+        function showError(message) {
+            errorMessage.textContent = message;
+            errorMessage.classList.add('show');
+            successMessage.classList.remove('show');
+        }
+
+        function showSuccess(message) {
+            successMessage.textContent = message;
+            successMessage.classList.add('show');
+            errorMessage.classList.remove('show');
+        }
+
+        function clearMessages() {
+            errorMessage.classList.remove('show');
+            successMessage.classList.remove('show');
+        }
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            clearMessages();
+
+            const email = emailInput.value.trim();
+            const password = passwordInput.value;
+
+            if (!email || !password) {
+                showError('Please fill in all fields');
+                return;
+            }
+
+            signInBtn.disabled = true;
+            loadingSpinner.classList.add('show');
+
+            try {
+                const res = await fetch(`${API}/auth/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+
+                const data = await res.json();
+
+                if (!res.ok) {
+                    showError(data.detail || 'Login failed');
+                    return;
+                }
+
+                localStorage.setItem('token', data.access_token);
+                showSuccess('Login successful! Redirecting...');
+                
+                setTimeout(() => {
+                    window.location.href = '/analytics';
+                }, 1000);
+
+            } catch (error) {
+                showError('Network error. Please try again.');
+            } finally {
+                signInBtn.disabled = false;
+                loadingSpinner.classList.remove('show');
+            }
+        });
+
+        emailInput.addEventListener('focus', clearMessages);
+        passwordInput.addEventListener('focus', clearMessages);
+
+        // Check if already logged in
+        if (localStorage.getItem('token')) {
+            window.location.href = '/analytics';
+        }
+    </script>
+</body>
+</html>
