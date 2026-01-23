@@ -287,36 +287,36 @@ async def get_location_from_gps(latitude: float, longitude: float) -> Dict[str, 
 # ============================================
 # IP TO LOCATION (FALLBACK)
 # ============================================
-async def get_location_from_ip(ip_address: str) -> Dict[str, Optional[str]]:
-    """
-    Get location data from IP address using ip-api.com (free, no key needed).
-    Returns: country, city, region
-    """
-    if not ip_address or ip_address == "127.0.0.1" or ip_address.startswith("192.168"):
-        return {
-            "country": "Local",
-            "city": "Localhost",
-            "region": "Local Network"
-        }
+# async def get_location_from_ip(ip_address: str) -> Dict[str, Optional[str]]:
+#     """
+#     Get location data from IP address using ip-api.com (free, no key needed).
+#     Returns: country, city, region
+#     """
+#     if not ip_address or ip_address == "127.0.0.1" or ip_address.startswith("192.168"):
+#         return {
+#             "country": "Local",
+#             "city": "Localhost",
+#             "region": "Local Network"
+#         }
     
-    try:
-        async with httpx.AsyncClient(timeout=3.0) as client:
-            response = await client.get(f"http://ip-api.com/json/{ip_address}")
+#     try:
+#         async with httpx.AsyncClient(timeout=3.0) as client:
+#             response = await client.get(f"http://ip-api.com/json/{ip_address}")
             
-            if response.status_code == 200:
-                data = response.json()
+#             if response.status_code == 200:
+#                 data = response.json()
                 
-                if data.get("status") == "success":
-                    return {
-                        "country": data.get("country"),
-                        "city": data.get("city"),
-                        "region": data.get("regionName")
-                    }
-    except Exception as e:
-        print(f"Error getting location: {e}")
+#                 if data.get("status") == "success":
+#                     return {
+#                         "country": data.get("country"),
+#                         "city": data.get("city"),
+#                         "region": data.get("regionName")
+#                     }
+#     except Exception as e:
+#         print(f"Error getting location: {e}")
     
-    return {
-        "country": "Unknown",
-        "city": "Unknown",
-        "region": "Unknown"
-    }
+#     return {
+#         "country": "Unknown",
+#         "city": "Unknown",
+#         "region": "Unknown"
+#     }
