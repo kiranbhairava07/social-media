@@ -504,33 +504,24 @@ async def get_qr_analytics(
     current_user: User = Depends(get_current_user)
 ):
     """
-    FINAL VERSION
-    - Timezone correct
-    - Filter correct
-    - Hourly charts driven by real timestamps
+    Get QR analytics with LOCAL TIMEZONE support.
+    FIXED: Hourly breakdown now shows correct local hours.
     """
 
     try:
-        # --------------------------------------------------
         # Validate timezone
-        # --------------------------------------------------
         try:
             tz = ZoneInfo(timezone)
         except Exception:
             raise HTTPException(status_code=400, detail="Invalid timezone")
 
-        # --------------------------------------------------
         # Verify QR ownership
-        # --------------------------------------------------
-        qr_result = await db.execute(
+        result = await db.execute(
             select(QRCode).where(
-                and_(
-                    QRCode.id == qr_id,
-                    QRCode.created_by == current_user.id
-                )
+                and_(QRCode.id == qr_id, QRCode.created_by == current_user.id)
             )
         )
-        qr_code = qr_result.scalar_one_or_none()
+        qr_code = result.scalar_one_or_none()
 
         if not qr_code:
             raise HTTPException(
@@ -538,12 +529,11 @@ async def get_qr_analytics(
                 detail="QR code not found"
             )
 
-        # --------------------------------------------------
-        # Resolve LOCAL date range
-        # --------------------------------------------------
+        # LOCAL NOW → convert to UTC for DB queries
         local_now = datetime.now(tz)
         utc_now = local_now.astimezone(ZoneInfo("UTC"))
 
+        # Resolve date range (LOCAL TIME)
         if start_date and end_date:
             local_start = datetime.combine(start_date, time.min, tzinfo=tz)
             local_end = datetime.combine(end_date, time.max, tzinfo=tz)
@@ -563,21 +553,19 @@ async def get_qr_analytics(
 
             local_end = local_now
 
+        # Convert LOCAL → UTC for DB filtering
         utc_start = local_start.astimezone(ZoneInfo("UTC")) if local_start else None
         utc_end = local_end.astimezone(ZoneInfo("UTC")) if local_end else None
 
-        # --------------------------------------------------
         # Shared filters
-        # --------------------------------------------------
         filters = [QRScan.qr_code_id == qr_id]
+
         if utc_start:
             filters.append(QRScan.scanned_at >= utc_start)
         if utc_end:
             filters.append(QRScan.scanned_at <= utc_end)
 
-        # --------------------------------------------------
-        # QUERY 1: COUNTS (single optimized query)
-        # --------------------------------------------------
+        # COUNTS
         local_today_start = local_now.replace(hour=0, minute=0, second=0, microsecond=0)
         utc_today_start = local_today_start.astimezone(ZoneInfo("UTC"))
 
@@ -596,9 +584,7 @@ async def get_qr_analytics(
         scans_this_week = counts.scans_week or 0
         scans_this_month = counts.scans_month or 0
 
-        # --------------------------------------------------
-        # QUERY 2: DEVICE BREAKDOWN
-        # --------------------------------------------------
+        # DEVICE BREAKDOWN
         device_result = await db.execute(
             select(
                 QRScan.device_type,
@@ -608,7 +594,7 @@ async def get_qr_analytics(
             .group_by(QRScan.device_type)
         )
 
-        device_counts = {r.device_type: r.count for r in device_result.all()}
+        device_counts = {row.device_type: row.count for row in device_result.all()}
 
         mobile = device_counts.get("Mobile", 0)
         desktop = device_counts.get("Desktop", 0)
@@ -622,9 +608,7 @@ async def get_qr_analytics(
 
         mobile_percentage = round((mobile / total_scans * 100) if total_scans else 0, 1)
 
-        # --------------------------------------------------
-        # QUERY 3: LOCATION
-        # --------------------------------------------------
+        # LOCATION
         city_result = await db.execute(
             select(
                 QRScan.city,
@@ -658,22 +642,33 @@ async def get_qr_analytics(
             for r in country_result.all()
         ]
 
-        # --------------------------------------------------
-        # QUERY 4: RAW TIMESTAMPS (KEY FIX)
-        # --------------------------------------------------
-        scan_times_result = await db.execute(
+        # ✅ FIXED: HOURLY BREAKDOWN (LOCAL HOURS)
+        # The issue was using func.timezone() which doesn't work properly
+        # Solution: Convert in Python after fetching
+        
+        hourly_result = await db.execute(
             select(QRScan.scanned_at)
             .where(and_(*filters))
         )
-
-        scan_timestamps = [
-            ts.replace(tzinfo=ZoneInfo("UTC")).astimezone(tz).isoformat()
-            for ts in scan_times_result.scalars().all()
+        
+        all_scans = hourly_result.scalars().all()
+        
+        # Convert UTC timestamps to local timezone and count by hour
+        hourly_counts = {}
+        for scan_time in all_scans:
+            # Convert UTC to local timezone
+            local_time = scan_time.replace(tzinfo=ZoneInfo("UTC")).astimezone(tz)
+            hour = local_time.hour
+            hourly_counts[hour] = hourly_counts.get(hour, 0) + 1
+        
+        hourly_breakdown = [
+            {"hour": h, "count": hourly_counts.get(h, 0)} 
+            for h in range(24)
         ]
+        
+        peak_hour = max(hourly_counts.items(), key=lambda x: x[1])[0] if hourly_counts else None
 
-        # --------------------------------------------------
-        # QUERY 5: RECENT SCANS
-        # --------------------------------------------------
+        # RECENT SCANS
         recent_result = await db.execute(
             select(QRScan)
             .where(and_(*filters))
@@ -683,14 +678,8 @@ async def get_qr_analytics(
 
         recent_scans = recent_result.scalars().all()
 
-        # --------------------------------------------------
-        # RESPONSE
-        # --------------------------------------------------
         return {
             "qr_code_id": qr_id,
-            "timezone": timezone,
-            "time_range": time_range,
-            "custom_range": {"start": start_date, "end": end_date},
             "total_scans": total_scans,
             "scans_today": scans_today,
             "scans_this_week": scans_this_week,
@@ -699,7 +688,8 @@ async def get_qr_analytics(
             "mobile_percentage": mobile_percentage,
             "top_countries": top_countries,
             "top_cities": top_cities,
-            "scan_timestamps": scan_timestamps,   # ✅ FIX
+            "peak_hour": peak_hour,
+            "hourly_breakdown": hourly_breakdown,
             "recent_scans": recent_scans
         }
 
