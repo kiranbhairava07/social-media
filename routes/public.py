@@ -188,7 +188,7 @@ async def log_scan(
             location_data = await get_location_from_gps(latitude, longitude)
             logger.info(f"GPS location: {location_data}")
         else:
-            location_data = await get_location_from_ip(ip_address)
+            location_data = await get_location_from_gps(ip_address)
             logger.info(f"IP location: {location_data}")
         
         # Create scan record
