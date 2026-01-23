@@ -46,7 +46,7 @@ app = FastAPI(
     description="QR code management system with analytics",
     version="2.0.0",
     lifespan=lifespan,
-    docs_url="/api/docs" if settings.ENVIRONMENT != "production" else None,
+    # docs_url="/api/docs" if settings.ENVIRONMENT != "production" else None,
     redoc_url="/api/redoc" if settings.ENVIRONMENT != "production" else None,
 )
 
