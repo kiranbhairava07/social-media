@@ -104,7 +104,7 @@ body{
 
 .filter-row{
     display:grid;
-    grid-template-columns:2fr 1.5fr 1fr 1fr 1.5fr 1fr;
+    grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
     gap:12px;
 }
 
@@ -441,17 +441,6 @@ td{
                 <input type="date" id="endDate" disabled />
             </div>
 
-            <div class="filter-group">
-                <label>Timezone</label>
-                <select id="timezone" onchange="loadAnalytics()">
-                    <option value="Asia/Kolkata" selected>Asia/Kolkata (IST)</option>
-                    <option value="UTC">UTC</option>
-                    <option value="America/New_York">New York (EST)</option>
-                    <option value="Europe/London">London (GMT)</option>
-                    <option value="Asia/Tokyo">Tokyo (JST)</option>
-                </select>
-            </div>
-
             <div class="filter-group" style="display:flex;align-items:flex-end">
                 <button class="btn btn-primary" style="width:100%" onclick="applyDates()">Apply Filter</button>
             </div>
@@ -490,7 +479,7 @@ td{
         <div class="section-header">
             <div>
                 <div class="section-title">Hourly Scan Distribution</div>
-                <div class="section-subtitle">Real-time hourly frequency analysis • <strong id="timezoneLabel">Asia/Kolkata (IST)</strong></div>
+                <div class="section-subtitle">Real-time hourly frequency analysis</div>
             </div>
             <div class="chart-legend">
                 <div class="legend-item">
@@ -608,8 +597,7 @@ async function loadAnalytics(){
     if(!qrId) return;
 
     const timeRange = document.getElementById('timeRange').value;
-    const timezone = document.getElementById('timezone').value;
-    const params = new URLSearchParams({timezone});
+    const params = new URLSearchParams({timezone: 'Asia/Kolkata'});
 
     if(timeRange === 'custom'){
         const start = document.getElementById('startDate').value;
@@ -628,9 +616,6 @@ async function loadAnalytics(){
 
     const data = await res.json();
     
-    // Update timezone label
-    document.getElementById('timezoneLabel').textContent = getTimezoneLabel(timezone);
-    
     // Update QR name
     const qrRes = await fetch(`${API}/api/qr/${qrId}`,{
         headers:{Authorization:`Bearer ${getToken()}`}
@@ -643,17 +628,6 @@ async function loadAnalytics(){
     renderLocations(data);
     renderDevices(data);
     renderTable(data);
-}
-
-function getTimezoneLabel(tz){
-    const labels = {
-        'Asia/Kolkata': 'Asia/Kolkata (IST)',
-        'UTC': 'UTC',
-        'America/New_York': 'New York (EST)',
-        'Europe/London': 'London (GMT)',
-        'Asia/Tokyo': 'Tokyo (JST)'
-    };
-    return labels[tz] || tz;
 }
 
 function renderStats(data){
@@ -679,31 +653,17 @@ function renderStats(data){
 
 function renderChart(data){
     const chart = document.getElementById('hourlyChart');
-
-    // Initialize 24-hour buckets
-    const hourly = Array(24).fill(0);
-
-    data.scan_timestamps.forEach(ts => {
-        const d = new Date(ts);
-        hourly[d.getHours()]++;
-    });
-
-    const max = Math.max(...hourly, 1);
-
-    chart.innerHTML = hourly.map((count, hour) => {
-        const height = (count / max) * 100;
-
-        const label =
-            hour === 0 ? '12AM' :
-            hour < 12 ? `${hour}AM` :
-            hour === 12 ? '12PM' :
-            `${hour - 12}PM`;
-
-        return `
-            <div class="bar" style="height:${height}%" title="${label}: ${count} scans">
-                ${hour % 3 === 0 ? `<div class="bar-label">${label}</div>` : ''}
-            </div>
-        `;
+    const max = Math.max(...data.hourly_breakdown.map(h=>h.count), 1);
+    
+    chart.innerHTML = data.hourly_breakdown.map(h=>{
+        const height = (h.count / max) * 100;
+        const label = h.hour === 0 ? '12AM' : 
+                     h.hour < 12 ? `${h.hour}AM` : 
+                     h.hour === 12 ? '12PM' : `${h.hour-12}PM`;
+        
+        return `<div class="bar" style="height:${height}%" title="${label}: ${h.count} scans">
+            ${h.hour % 3 === 0 ? `<div class="bar-label">${label}</div>` : ''}
+        </div>`;
     }).join('');
 }
 
