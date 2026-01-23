@@ -32,7 +32,6 @@ body{
     padding:24px;
 }
 
-/* Header */
 .header{
     display:flex;
     justify-content:space-between;
@@ -93,7 +92,6 @@ body{
     background:var(--primary-light);
 }
 
-/* Filters */
 .filters{
     background:var(--card);
     border:1px solid var(--border);
@@ -125,7 +123,6 @@ body{
     font-size:13px;
 }
 
-/* Stats */
 .stats{
     display:grid;
     grid-template-columns:repeat(4,1fr);
@@ -160,13 +157,18 @@ body{
     font-weight:600;
 }
 
-/* Chart Section */
+.grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:20px;
+    margin-bottom:20px;
+}
+
 .chart-section{
     background:var(--card);
     border:1px solid var(--border);
     border-radius:10px;
     padding:20px;
-    margin-bottom:20px;
 }
 
 .section-header{
@@ -186,65 +188,6 @@ body{
     color:var(--muted);
 }
 
-.chart-legend{
-    display:flex;
-    gap:16px;
-    font-size:12px;
-}
-
-.legend-item{
-    display:flex;
-    align-items:center;
-    gap:6px;
-}
-
-.legend-dot{
-    width:8px;
-    height:8px;
-    border-radius:50%;
-    background:var(--primary);
-}
-
-.chart{
-    height:200px;
-    display:flex;
-    align-items:flex-end;
-    gap:2px;
-    margin-top:16px;
-}
-
-.bar{
-    flex:1;
-    background:var(--primary);
-    border-radius:3px 3px 0 0;
-    min-height:2px;
-    position:relative;
-    cursor:pointer;
-}
-
-.bar:hover{
-    opacity:0.8;
-}
-
-.bar-label{
-    position:absolute;
-    bottom:-20px;
-    left:50%;
-    transform:translateX(-50%);
-    font-size:10px;
-    color:var(--muted);
-    white-space:nowrap;
-}
-
-/* Grid */
-.grid{
-    display:grid;
-    grid-template-columns:1fr 1fr;
-    gap:20px;
-    margin-bottom:20px;
-}
-
-/* Locations */
 .location-item{
     display:flex;
     justify-content:space-between;
@@ -274,7 +217,6 @@ body{
     margin-left:4px;
 }
 
-/* Device Circle */
 .device-circle{
     width:180px;
     height:180px;
@@ -314,7 +256,6 @@ body{
     font-weight:600;
 }
 
-/* Table */
 .table-section{
     background:var(--card);
     border:1px solid var(--border);
@@ -327,18 +268,6 @@ body{
     justify-content:space-between;
     align-items:center;
     margin-bottom:16px;
-}
-
-.filter-link{
-    color:var(--primary);
-    font-size:12px;
-    font-weight:600;
-    text-decoration:none;
-    cursor:pointer;
-}
-
-.filter-link:hover{
-    text-decoration:underline;
 }
 
 table{
@@ -373,17 +302,58 @@ td{
     font-size:12px;
 }
 
-.view-all-link{
-    text-align:center;
-    padding:16px;
-    color:var(--primary);
-    font-size:13px;
-    font-weight:600;
-    cursor:pointer;
+.pagination{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-top:16px;
+    padding-top:16px;
+    border-top:1px solid var(--border);
 }
 
-.view-all-link:hover{
-    text-decoration:underline;
+.pagination-info{
+    font-size:13px;
+    color:var(--muted);
+}
+
+.pagination-btns{
+    display:flex;
+    gap:8px;
+    align-items:center;
+}
+
+.pagination-btn{
+    padding:6px 12px;
+    border:1px solid var(--border);
+    background:#fff;
+    border-radius:6px;
+    font-size:13px;
+    cursor:pointer;
+    transition:all 0.2s;
+}
+
+.pagination-btn:disabled{
+    opacity:0.5;
+    cursor:not-allowed;
+}
+
+.pagination-btn:hover:not(:disabled){
+    background:#f8fafc;
+    border-color:var(--primary);
+}
+
+.pagination-btn.active{
+    background:var(--primary);
+    color:#fff;
+    border-color:var(--primary);
+}
+
+.page-size-select{
+    padding:6px 10px;
+    border:1px solid var(--border);
+    border-radius:6px;
+    font-size:13px;
+    cursor:pointer;
 }
 
 .no-data{
@@ -391,43 +361,76 @@ td{
     padding:40px;
     color:var(--muted);
 }
+
+.loading-overlay{
+    position:fixed;
+    top:0;
+    left:0;
+    right:0;
+    bottom:0;
+    background:rgba(255,255,255,0.8);
+    display:none;
+    align-items:center;
+    justify-content:center;
+    z-index:1000;
+}
+
+.loading-overlay.show{
+    display:flex;
+}
+
+.spinner{
+    width:40px;
+    height:40px;
+    border:3px solid var(--border);
+    border-top:3px solid var(--primary);
+    border-radius:50%;
+    animation:spin 1s linear infinite;
+}
+
+@keyframes spin{
+    to{transform:rotate(360deg)}
+}
 </style>
 </head>
 
 <body>
 
+<div class="loading-overlay" id="loadingOverlay">
+    <div class="spinner"></div>
+</div>
+
 <div class="container">
-    <!-- Header -->
     <div class="header">
         <div class="header-left">
             <h1>
                 QR Code ID #<span id="qrCodeName">-</span> Analytics
-                <span class="live-badge">● TIMEZONE-AWARE</span>
+                <span class="live-badge">● LIVE DATA</span>
             </h1>
-            <p class="subtitle">Real-time scan data, frequency analysis</p>
+            <p class="subtitle">Real-time scan tracking with complete history</p>
         </div>
         <div class="header-actions">
             <button class="btn" onclick="window.location.href='/dashboard'">← Dashboard</button>
-            <button class="btn btn-primary" onclick="exportData()">📊 Export Report</button>
+            <button class="btn btn-primary" onclick="exportPDF()">📊 Export PDF</button>
         </div>
     </div>
 
-    <!-- Filters -->
     <div class="filters">
         <div class="filter-row">
             <div class="filter-group">
                 <label>QR Code</label>
-                <select id="qrSelect" onchange="loadAnalytics()"></select>
+                <select id="qrSelect" onchange="resetAndLoad()"></select>
             </div>
             
             <div class="filter-group">
                 <label>Time Range</label>
-                <select id="timeRange" onchange="toggleDates();loadAnalytics()">
+                <select id="timeRange" onchange="toggleDates();resetAndLoad()">
                     <option value="today">Today</option>
                     <option value="7days">7 Days</option>
                     <option value="30days" selected>30 Days</option>
                     <option value="90days">90 Days</option>
-                    <option value="custom">Custom</option>
+                    <option value="all">All Time</option>
+                    <option value="custom">Custom Range</option>
                 </select>
             </div>
 
@@ -447,56 +450,33 @@ td{
         </div>
     </div>
 
-    <!-- Stats -->
     <div class="stats">
         <div class="stat-card">
             <div class="stat-label">Total Scans</div>
             <div class="stat-value" id="totalScans">-</div>
-            <div class="stat-change" id="totalChange">-</div>
+            <div class="stat-change" id="totalChange">All time</div>
         </div>
 
         <div class="stat-card">
             <div class="stat-label">Today</div>
             <div class="stat-value" id="todayScans">-</div>
-            <div class="stat-change" id="todayChange">-</div>
+            <div class="stat-change" id="todayChange">Last 24 hours</div>
         </div>
 
         <div class="stat-card">
             <div class="stat-label">Mobile</div>
             <div class="stat-value" id="mobilePercent">-</div>
-            <div class="stat-change">Dominant</div>
+            <div class="stat-change">Dominant device</div>
         </div>
 
         <div class="stat-card">
             <div class="stat-label">Peak Hour</div>
             <div class="stat-value" id="peakHour">-</div>
-            <div class="stat-change" id="peakLabel">-</div>
+            <div class="stat-change" id="peakLabel">Most active time</div>
         </div>
     </div>
 
-    <!-- Chart -->
-    <div class="chart-section">
-        <div class="section-header">
-            <div>
-                <div class="section-title">Hourly Scan Distribution</div>
-                <div class="section-subtitle">Real-time hourly frequency analysis</div>
-            </div>
-            <div class="chart-legend">
-                <div class="legend-item">
-                    <span class="legend-dot"></span>
-                    <span>SCANS</span>
-                </div>
-                <div class="legend-item">
-                    <span style="color:var(--muted)">AVERAGE</span>
-                </div>
-            </div>
-        </div>
-        <div class="chart" id="hourlyChart"></div>
-    </div>
-
-    <!-- Grid -->
     <div class="grid">
-        <!-- Locations -->
         <div class="chart-section">
             <div class="section-header">
                 <div class="section-title">Top Locations</div>
@@ -504,7 +484,6 @@ td{
             <div id="locationsList"></div>
         </div>
 
-        <!-- Device Insights -->
         <div class="chart-section">
             <div class="section-header">
                 <div class="section-title">Device Insights</div>
@@ -514,14 +493,20 @@ td{
         </div>
     </div>
 
-    <!-- Live Scan Log -->
     <div class="table-section">
         <div class="table-header">
             <div>
-                <div class="section-title">Live Scan Log</div>
-                <div class="section-subtitle">Real-time live scan receiver 10 scans</div>
+                <div class="section-title">Complete Scan History</div>
+                <div class="section-subtitle">All scans matching your filters</div>
             </div>
-            <a class="filter-link">🔄 Live Monitoring Active</a>
+            <div style="display:flex;gap:8px;align-items:center">
+                <label style="font-size:12px;color:var(--muted)">Show:</label>
+                <select class="page-size-select" id="pageSize" onchange="changePageSize()">
+                    <option value="25">25</option>
+                    <option value="50" selected>50</option>
+                    <option value="100">100</option>
+                </select>
+            </div>
         </div>
 
         <table>
@@ -530,24 +515,33 @@ td{
                     <th>Timestamp</th>
                     <th>Device</th>
                     <th>Browser</th>
-                    <th>City</th>
+                    <th>Location</th>
                     <th>OS</th>
                 </tr>
             </thead>
             <tbody id="scanTable"></tbody>
         </table>
 
-        <div class="view-all-link" onclick="alert('View full activity log')">
-            View All Activity Log →
+        <div class="pagination">
+            <div class="pagination-info" id="paginationInfo">-</div>
+            <div class="pagination-btns">
+                <button class="pagination-btn" id="firstBtn" onclick="goToPage(1)">« First</button>
+                <button class="pagination-btn" id="prevBtn" onclick="changePage(-1)">‹ Prev</button>
+                <span style="margin:0 8px;font-size:13px;color:var(--muted)">
+                    Page <strong id="currentPage">1</strong> of <strong id="totalPages">1</strong>
+                </span>
+                <button class="pagination-btn" id="nextBtn" onclick="changePage(1)">Next ›</button>
+                <button class="pagination-btn" id="lastBtn" onclick="goToLastPage()">Last »</button>
+            </div>
         </div>
     </div>
 </div>
 
-
-
 <script>
 const API = 'https://social-media-vmfr.onrender.com';
 let LAST_ANALYTICS = null;
+let CURRENT_PAGE = 1;
+let PAGE_SIZE = 50;
 
 function getToken(){
     return localStorage.getItem('token');
@@ -557,196 +551,140 @@ function checkAuth(){
     if(!getToken()) window.location.href='/';
 }
 
+function showLoading(){
+    document.getElementById('loadingOverlay').classList.add('show');
+}
+
+function hideLoading(){
+    document.getElementById('loadingOverlay').classList.remove('show');
+}
+
 function toggleDates(){
     const isCustom = document.getElementById('timeRange').value === 'custom';
     document.getElementById('startDate').disabled = !isCustom;
     document.getElementById('endDate').disabled = !isCustom;
 }
 
+function resetAndLoad(){
+    CURRENT_PAGE = 1;
+    loadAnalytics();
+}
+
 function applyDates(){
     if(document.getElementById('timeRange').value === 'custom'){
+        resetAndLoad();
+    }
+}
+
+function changePageSize(){
+    PAGE_SIZE = parseInt(document.getElementById('pageSize').value);
+    CURRENT_PAGE = 1;
+    loadAnalytics();
+}
+
+function changePage(delta){
+    const newPage = CURRENT_PAGE + delta;
+    if(newPage < 1 || (LAST_ANALYTICS && newPage > LAST_ANALYTICS.total_pages)) return;
+    CURRENT_PAGE = newPage;
+    loadAnalytics();
+}
+
+function goToPage(page){
+    if(page < 1 || (LAST_ANALYTICS && page > LAST_ANALYTICS.total_pages)) return;
+    CURRENT_PAGE = page;
+    loadAnalytics();
+}
+
+function goToLastPage(){
+    if(LAST_ANALYTICS && LAST_ANALYTICS.total_pages > 0){
+        CURRENT_PAGE = LAST_ANALYTICS.total_pages;
         loadAnalytics();
     }
 }
 
-function exportData(){
-    if(!LAST_ANALYTICS){
-        alert('No analytics data to export');
-        return;
-    }
-
-    const reportWindow = window.open('', '_blank');
-
-    reportWindow.document.write(`
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <title>QR Analytics Report</title>
-            <style>
-                body{font-family:Arial,sans-serif;padding:40px;color:#111}
-                h1{font-size:22px}
-                h2{font-size:16px;margin-top:30px}
-                table{width:100%;border-collapse:collapse;margin-top:10px}
-                th,td{border:1px solid #ccc;padding:8px;font-size:13px}
-                th{background:#f3f4f6;text-align:left}
-                .meta{margin-bottom:20px;font-size:13px}
-            </style>
-        </head>
-
-        <!-- ✅ print triggered safely -->
-        <body onload="window.print()">
-
-        <h1>QR Analytics Report</h1>
-
-        <div class="meta">
-            <p><strong>QR Code:</strong> ${document.getElementById('qrCodeName').textContent}</p>
-            <p><strong>Time Range:</strong> ${document.getElementById('timeRange').value}</p>
-            <p><strong>Exported At:</strong> ${new Date().toLocaleString()}</p>
-        </div>
-
-        <h2>Summary</h2>
-        <table>
-            <tr><th>Total Scans</th><td>${LAST_ANALYTICS.total_scans}</td></tr>
-            <tr><th>Scans Today</th><td>${LAST_ANALYTICS.scans_today}</td></tr>
-            <tr><th>Scans This Week</th><td>${LAST_ANALYTICS.scans_this_week}</td></tr>
-            <tr><th>Scans This Month</th><td>${LAST_ANALYTICS.scans_this_month}</td></tr>
-            <tr><th>Mobile %</th><td>${LAST_ANALYTICS.mobile_percentage}%</td></tr>
-        </table>
-
-        <h2>Hourly Scan Distribution</h2>
-        <table>
-            <tr><th>Hour</th><th>Scan Count</th></tr>
-            ${
-                LAST_ANALYTICS.hourly_breakdown.map(h=>{
-                    const label =
-                        h.hour === 0 ? '12 AM' :
-                        h.hour < 12 ? `${h.hour} AM` :
-                        h.hour === 12 ? '12 PM' :
-                        `${h.hour - 12} PM`;
-                    return `<tr><td>${label}</td><td>${h.count}</td></tr>`;
-                }).join('')
-            }
-        </table>
-
-        </body>
-        </html>
-    `);
-
-    reportWindow.document.close();
-}
-
-
-
-function downloadCSV(data){
-    const rows = [];
-
-    // Header
-    rows.push([
-        'Timestamp',
-        'Device',
-        'Browser',
-        'City',
-        'Country',
-        'OS'
-    ]);
-
-    // Use filtered recent_scans OR scan_timestamps
-    data.recent_scans.forEach(scan => {
-        rows.push([
-            scan.scanned_at,
-            scan.device_type || '',
-            scan.browser || '',
-            scan.city || '',
-            scan.country || '',
-            scan.os || ''
-        ]);
-    });
-
-    const csvContent = rows
-        .map(r => r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(','))
-        .join('\n');
-
-    const blob = new Blob([csvContent], { type:'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `qr-analytics-export-${new Date().toISOString().slice(0,10)}.csv`;
-    link.click();
-
-    URL.revokeObjectURL(url);
-}
-
 async function loadQRList(){
-    const res = await fetch(`${API}/api/qr`,{
-        headers:{Authorization:`Bearer ${getToken()}`}
-    });
+    try{
+        const res = await fetch(`${API}/api/qr`,{
+            headers:{Authorization:`Bearer ${getToken()}`}
+        });
 
-    if(res.status===401){ window.location.href='/'; return; }
+        if(res.status===401){ window.location.href='/'; return; }
 
-    const qrCodes = await res.json();
-    const select = document.getElementById('qrSelect');
+        const qrCodes = await res.json();
+        const select = document.getElementById('qrSelect');
 
-    if(qrCodes.length===0){
-        select.innerHTML='<option>No QR codes</option>';
-        return;
+        if(qrCodes.length===0){
+            select.innerHTML='<option>No QR codes</option>';
+            return;
+        }
+
+        select.innerHTML = qrCodes.map(qr =>
+            `<option value="${qr.id}">${qr.code} (${qr.scan_count} scans)</option>`
+        ).join('');
+
+        loadAnalytics();
+    }catch(err){
+        console.error('Failed to load QR list:', err);
+        hideLoading();
     }
-
-    select.innerHTML = qrCodes.map(qr =>
-        `<option value="${qr.id}">${qr.code} (${qr.scan_count} scans)</option>`
-    ).join('');
-
-    loadAnalytics();
 }
 
 async function loadAnalytics(){
     const qrId = document.getElementById('qrSelect').value;
     if(!qrId) return;
 
-    const timeRange = document.getElementById('timeRange').value;
-    const params = new URLSearchParams({timezone: 'Asia/Kolkata'});
+    showLoading();
 
-    if(timeRange === 'custom'){
-        const start = document.getElementById('startDate').value;
-        const end = document.getElementById('endDate').value;
-        if(start && end){
-            params.append('start_date', start);
-            params.append('end_date', end);
+    try{
+        const timeRange = document.getElementById('timeRange').value;
+        const params = new URLSearchParams({
+            timezone: 'Asia/Kolkata',
+            page: CURRENT_PAGE,
+            page_size: PAGE_SIZE
+        });
+
+        if(timeRange === 'custom'){
+            const start = document.getElementById('startDate').value;
+            const end = document.getElementById('endDate').value;
+            if(start && end){
+                params.append('start_date', start);
+                params.append('end_date', end);
+            }
+        }else{
+            params.append('time_range', timeRange);
         }
-    }else{
-        params.append('time_range', timeRange);
+
+        const res = await fetch(`${API}/api/qr/${qrId}/analytics?${params}`,{
+            headers:{Authorization:`Bearer ${getToken()}`}
+        });
+
+        if(!res.ok) throw new Error('Failed to load analytics');
+
+        const data = await res.json();
+        LAST_ANALYTICS = data;
+
+        const qrRes = await fetch(`${API}/api/qr/${qrId}`,{
+            headers:{Authorization:`Bearer ${getToken()}`}
+        });
+        const qrData = await qrRes.json();
+        document.getElementById('qrCodeName').textContent = qrData.code;
+
+        renderStats(data);
+        renderLocations(data);
+        renderDevices(data);
+        renderTable(data);
+        renderPagination(data);
+    }catch(err){
+        console.error('Failed to load analytics:', err);
+        alert('Failed to load analytics. Please try again.');
+    }finally{
+        hideLoading();
     }
-
-    const res = await fetch(`${API}/api/qr/${qrId}/analytics?${params}`,{
-        headers:{Authorization:`Bearer ${getToken()}`}
-    });
-
-    const data = await res.json();
-
-    LAST_ANALYTICS = data;
-
-    
-    // Update QR name
-    const qrRes = await fetch(`${API}/api/qr/${qrId}`,{
-        headers:{Authorization:`Bearer ${getToken()}`}
-    });
-    const qrData = await qrRes.json();
-    document.getElementById('qrCodeName').textContent = qrData.code;
-
-    renderStats(data);
-    renderChart(data);
-    renderLocations(data);
-    renderDevices(data);
-    renderTable(data);
 }
 
 function renderStats(data){
     document.getElementById('totalScans').textContent = data.total_scans;
-    document.getElementById('totalChange').textContent = '+20%';
-    
     document.getElementById('todayScans').textContent = data.scans_today;
-    document.getElementById('todayChange').textContent = '+8%';
-    
     document.getElementById('mobilePercent').textContent = `${data.mobile_percentage}%`;
     
     const peak = data.peak_hour;
@@ -754,27 +692,9 @@ function renderStats(data){
         const hour = peak > 12 ? peak - 12 : (peak === 0 ? 12 : peak);
         const period = peak >= 12 ? 'PM' : 'AM';
         document.getElementById('peakHour').textContent = `${hour} ${period}`;
-        document.getElementById('peakLabel').textContent = 'Most Active';
     }else{
         document.getElementById('peakHour').textContent = '-';
-        document.getElementById('peakLabel').textContent = 'No data';
     }
-}
-
-function renderChart(data){
-    const chart = document.getElementById('hourlyChart');
-    const max = Math.max(...data.hourly_breakdown.map(h=>h.count), 1);
-    
-    chart.innerHTML = data.hourly_breakdown.map(h=>{
-        const height = (h.count / max) * 100;
-        const label = h.hour === 0 ? '12AM' : 
-                     h.hour < 12 ? `${h.hour}AM` : 
-                     h.hour === 12 ? '12PM' : `${h.hour-12}PM`;
-        
-        return `<div class="bar" style="height:${height}%" title="${label}: ${h.count} scans">
-            ${h.hour % 3 === 0 ? `<div class="bar-label">${label}</div>` : ''}
-        </div>`;
-    }).join('');
 }
 
 function renderLocations(data){
@@ -791,9 +711,9 @@ function renderLocations(data){
         const percent = ((loc.count / total) * 100).toFixed(0);
         return `
             <div class="location-item">
-                <div class="location-name">${loc.city || 'Unknown'}</div>
+                <div class="location-name">${loc.city || 'Unknown'}, ${loc.country || ''}</div>
                 <div>
-                    <span class="location-count">${loc.count} scans</span>
+                    <span class="location-count">${loc.count}</span>
                     <span class="percentage">[${percent}%]</span>
                 </div>
             </div>
@@ -826,7 +746,7 @@ function renderTable(data){
     const table = document.getElementById('scanTable');
     
     if(data.recent_scans.length === 0){
-        table.innerHTML = '<tr><td colspan="5" class="no-data">No recent scans</td></tr>';
+        table.innerHTML = '<tr><td colspan="5" class="no-data">No scans found for this filter</td></tr>';
         return;
     }
 
@@ -835,21 +755,55 @@ function renderTable(data){
         const time = date.toLocaleString('en-US', {
             month:'2-digit',
             day:'2-digit',
+            year:'numeric',
             hour:'2-digit',
             minute:'2-digit',
             hour12:true
         });
+        
+        const location = [scan.city, scan.country].filter(Boolean).join(', ') || 'Unknown';
         
         return `
             <tr>
                 <td>${time}</td>
                 <td><span class="device-badge">📱 ${scan.device_type || 'Unknown'}</span></td>
                 <td>${scan.browser || '-'}</td>
-                <td>${scan.city || 'Unknown'}</td>
+                <td>${location}</td>
                 <td>${scan.os || '-'}</td>
             </tr>
         `;
     }).join('');
+}
+
+function renderPagination(data){
+    const info = document.getElementById('paginationInfo');
+    const prevBtn = document.getElementById('prevBtn');
+    const nextBtn = document.getElementById('nextBtn');
+    const firstBtn = document.getElementById('firstBtn');
+    const lastBtn = document.getElementById('lastBtn');
+    
+    const start = (data.page - 1) * data.page_size + 1;
+    const end = Math.min(data.page * data.page_size, data.filtered_scan_count);
+    
+    info.textContent = `Showing ${start}-${end} of ${data.filtered_scan_count} scans`;
+    
+    document.getElementById('currentPage').textContent = data.page;
+    document.getElementById('totalPages').textContent = data.total_pages;
+    
+    prevBtn.disabled = data.page === 1;
+    firstBtn.disabled = data.page === 1;
+    nextBtn.disabled = data.page >= data.total_pages;
+    lastBtn.disabled = data.page >= data.total_pages;
+}
+
+function exportPDF(){
+    if(!LAST_ANALYTICS){
+        alert('No data to export');
+        return;
+    }
+    
+    // Use browser's print dialog for now
+    window.print();
 }
 
 checkAuth();

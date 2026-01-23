@@ -332,164 +332,6 @@ async def get_qr_image(
         logger.error(f"Error generating QR image {qr_id}: {str(e)}", exc_info=True)
         raise HTTPException(status_code=500, detail="Failed to generate QR image")
 
-
-# ============================================
-# GET QR CODE ANALYTICS (HEAVILY OPTIMIZED)
-# ============================================
-# @router.get("/{qr_id}/analytics", response_model=QRAnalytics)
-# async def get_qr_analytics(
-#     qr_id: int,
-#     time_range: Optional[str] = Query("30days", regex="^(today|7days|30days|90days|all)$"),
-#     db: AsyncSession = Depends(get_db),
-#     current_user: User = Depends(get_current_user)
-# ):
-#     """
-#     Get detailed analytics for a QR code (HEAVILY OPTIMIZED).
-#     All stats computed in 3-4 queries instead of 10+.
-#     """
-#     try:
-#         # Verify QR code ownership
-#         result = await db.execute(
-#             select(QRCode).where(and_(QRCode.id == qr_id, QRCode.created_by == current_user.id))
-#         )
-#         qr_code = result.scalar_one_or_none()
-        
-#         if not qr_code:
-#             raise HTTPException(
-#                 status_code=status.HTTP_404_NOT_FOUND,
-#                 detail="QR code not found"
-#             )
-        
-#         now = datetime.utcnow()
-#         today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
-#         week_start = now - timedelta(days=7)
-#         month_start = now - timedelta(days=30)
-        
-#         # OPTIMIZED QUERY 1: All counts in single query
-#         counts_result = await db.execute(
-#             select(
-#                 func.count(QRScan.id).label('total_scans'),
-#                 func.sum(case((QRScan.scanned_at >= today_start, 1), else_=0)).label('scans_today'),
-#                 func.sum(case((QRScan.scanned_at >= week_start, 1), else_=0)).label('scans_week'),
-#                 func.sum(case((QRScan.scanned_at >= month_start, 1), else_=0)).label('scans_month'),
-#             )
-#             .where(QRScan.qr_code_id == qr_id)
-#         )
-#         counts = counts_result.one()
-        
-#         total_scans = counts.total_scans or 0
-#         scans_today = counts.scans_today or 0
-#         scans_this_week = counts.scans_week or 0
-#         scans_this_month = counts.scans_month or 0
-        
-#         # OPTIMIZED QUERY 2: Device breakdown in single query
-#         device_result = await db.execute(
-#             select(
-#                 QRScan.device_type,
-#                 func.count(QRScan.id).label('count')
-#             )
-#             .where(QRScan.qr_code_id == qr_id)
-#             .group_by(QRScan.device_type)
-#         )
-#         device_counts = {row.device_type: row.count for row in device_result.all()}
-        
-#         mobile_count = device_counts.get("Mobile", 0)
-#         desktop_count = device_counts.get("Desktop", 0)
-#         tablet_count = device_counts.get("Tablet", 0)
-        
-#         device_breakdown = {
-#             "mobile": mobile_count,
-#             "desktop": desktop_count,
-#             "tablet": tablet_count
-#         }
-        
-#         mobile_percentage = round((mobile_count / total_scans * 100) if total_scans > 0 else 0, 1)
-        
-#         # OPTIMIZED QUERY 3: Location data (top cities)
-#         city_result = await db.execute(
-#             select(
-#                 QRScan.city,
-#                 QRScan.country,
-#                 func.count(QRScan.id).label('count')
-#             )
-#             .where(and_(QRScan.qr_code_id == qr_id, QRScan.city.isnot(None)))
-#             .group_by(QRScan.city, QRScan.country)
-#             .order_by(func.count(QRScan.id).desc())
-#             .limit(5)
-#         )
-#         top_cities = [
-#             {"country": row.country, "city": row.city, "count": row.count}
-#             for row in city_result.all()
-#         ]
-        
-#         # Top countries
-#         country_result = await db.execute(
-#             select(
-#                 QRScan.country,
-#                 func.count(QRScan.id).label('count')
-#             )
-#             .where(and_(QRScan.qr_code_id == qr_id, QRScan.country.isnot(None)))
-#             .group_by(QRScan.country)
-#             .order_by(func.count(QRScan.id).desc())
-#             .limit(5)
-#         )
-#         top_countries = [
-#             {"country": row.country, "city": "", "count": row.count}
-#             for row in country_result.all()
-#         ]
-        
-#         # OPTIMIZED QUERY 4: Hourly breakdown
-#         hourly_result = await db.execute(
-#             select(
-#                 extract('hour', QRScan.scanned_at).label('hour'),
-#                 func.count(QRScan.id).label('count')
-#             )
-#             .where(and_(QRScan.qr_code_id == qr_id, QRScan.scanned_at >= now - timedelta(hours=24)))
-#             .group_by('hour')
-#             .order_by('hour')
-#         )
-#         hourly_data = {int(row.hour): row.count for row in hourly_result.all()}
-#         hourly_breakdown = [
-#             {"hour": i, "count": hourly_data.get(i, 0)}
-#             for i in range(24)
-#         ]
-        
-#         peak_hour = max(hourly_data.items(), key=lambda x: x[1])[0] if hourly_data else None
-        
-#         # Recent scans
-#         recent_result = await db.execute(
-#             select(QRScan)
-#             .where(QRScan.qr_code_id == qr_id)
-#             .order_by(QRScan.scanned_at.desc())
-#             .limit(10)
-#         )
-#         recent_scans = recent_result.scalars().all()
-        
-#         logger.info(f"Generated analytics for QR {qr_id}")
-        
-#         return {
-#             "qr_code_id": qr_id,
-#             "total_scans": total_scans,
-#             "scans_today": scans_today,
-#             "scans_this_week": scans_this_week,
-#             "scans_this_month": scans_this_month,
-#             "device_breakdown": device_breakdown,
-#             "mobile_percentage": mobile_percentage,
-#             "top_countries": top_countries,
-#             "top_cities": top_cities,
-#             "peak_hour": peak_hour,
-#             "hourly_breakdown": hourly_breakdown,
-#             "recent_scans": recent_scans
-#         }
-        
-#     except HTTPException:
-#         raise
-#     except Exception as e:
-#         logger.error(f"Error generating analytics for QR {qr_id}: {str(e)}", exc_info=True)
-#         raise HTTPException(status_code=500, detail="Failed to generate analytics")
-
-# Replace the analytics endpoint in routes/qr.py with this fixed version
-
 @router.get("/{qr_id}/analytics", response_model=QRAnalytics)
 async def get_qr_analytics(
     qr_id: int,
@@ -500,12 +342,14 @@ async def get_qr_analytics(
     start_date: Optional[date] = Query(None),
     end_date: Optional[date] = Query(None),
     timezone: str = Query("Asia/Kolkata"),
+    page: int = Query(1, ge=1),
+    page_size: int = Query(50, ge=1, le=100),  # Increased default to 50
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
     """
-    Get QR analytics with LOCAL TIMEZONE support.
-    FIXED: Hourly breakdown now shows correct local hours.
+    Get QR analytics with LOCAL TIMEZONE support and paginated scans.
+    Now returns ALL scans matching filters with proper pagination.
     """
 
     try:
@@ -642,10 +486,7 @@ async def get_qr_analytics(
             for r in country_result.all()
         ]
 
-        # ✅ FIXED: HOURLY BREAKDOWN (LOCAL HOURS)
-        # The issue was using func.timezone() which doesn't work properly
-        # Solution: Convert in Python after fetching
-        
+        # HOURLY BREAKDOWN (LOCAL HOURS)
         hourly_result = await db.execute(
             select(QRScan.scanned_at)
             .where(and_(*filters))
@@ -653,10 +494,8 @@ async def get_qr_analytics(
         
         all_scans = hourly_result.scalars().all()
         
-        # Convert UTC timestamps to local timezone and count by hour
         hourly_counts = {}
         for scan_time in all_scans:
-            # Convert UTC to local timezone
             local_time = scan_time.replace(tzinfo=ZoneInfo("UTC")).astimezone(tz)
             hour = local_time.hour
             hourly_counts[hour] = hourly_counts.get(hour, 0) + 1
@@ -668,15 +507,27 @@ async def get_qr_analytics(
         
         peak_hour = max(hourly_counts.items(), key=lambda x: x[1])[0] if hourly_counts else None
 
-        # RECENT SCANS
-        recent_result = await db.execute(
+        # PAGINATED SCANS - OPTIMIZED
+        # Count total filtered scans
+        filtered_count_result = await db.execute(
+            select(func.count(QRScan.id)).where(and_(*filters))
+        )
+        filtered_total = filtered_count_result.scalar() or 0
+        
+        # Calculate pagination
+        offset = (page - 1) * page_size
+        total_pages = (filtered_total + page_size - 1) // page_size if filtered_total > 0 else 1
+        
+        # Fetch paginated scans
+        scans_result = await db.execute(
             select(QRScan)
             .where(and_(*filters))
             .order_by(QRScan.scanned_at.desc())
-            .limit(10)
+            .offset(offset)
+            .limit(page_size)
         )
 
-        recent_scans = recent_result.scalars().all()
+        scans = scans_result.scalars().all()
 
         return {
             "qr_code_id": qr_id,
@@ -690,7 +541,11 @@ async def get_qr_analytics(
             "top_cities": top_cities,
             "peak_hour": peak_hour,
             "hourly_breakdown": hourly_breakdown,
-            "recent_scans": recent_scans
+            "recent_scans": scans,
+            "page": page,
+            "page_size": page_size,
+            "total_pages": total_pages,
+            "filtered_scan_count": filtered_total
         }
 
     except HTTPException:

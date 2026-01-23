@@ -192,6 +192,12 @@ class HourlyBreakdown(BaseModel):
     count: int
 
 
+class Pagination(BaseModel):
+    page: int
+    page_size: int
+    total_pages: int
+    total_scans: int
+
 class QRAnalytics(BaseModel):
     qr_code_id: int
     total_scans: int
@@ -211,9 +217,14 @@ class QRAnalytics(BaseModel):
     peak_hour: Optional[int]
     hourly_breakdown: list[HourlyBreakdown]
     
-    # Recent scans
+    # Paginated scans
     recent_scans: list[QRScanResponse]
-
+    
+    # Pagination metadata
+    page: int = 1
+    page_size: int = 10
+    total_pages: int = 1
+    filtered_scan_count: int = 0  # Number of scans matching the filter
 
 # ============================================
 # AUTH SCHEMAS
