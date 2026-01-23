@@ -5,6 +5,12 @@ class Settings(BaseSettings):
     # Database
     DATABASE_URL: str = "postgresql+asyncpg://qr_manager_user:6Vnr63gWlKZvcfsvyF2W8BgxM3GkZQTw@dpg-d5ot6u24d50c739pp190-a.oregon-postgres.render.com:5432/qr_manager"
     
+    # Database Pool Settings (OPTIMIZED)
+    DB_POOL_SIZE: int = 20  # Number of connections to maintain
+    DB_MAX_OVERFLOW: int = 10  # Additional connections when pool is full
+    DB_POOL_RECYCLE: int = 3600  # Recycle connections after 1 hour
+    DB_POOL_PRE_PING: bool = True  # Test connections before using
+    
     # JWT
     SECRET_KEY: str = "your-secret-key-change-in-production"
     ALGORITHM: str = "HS256"
@@ -12,7 +18,25 @@ class Settings(BaseSettings):
     
     # Server
     BASE_URL: str = "https://social-media-vmfr.onrender.com"
-    ENVIRONMENT: str = "development"
+    ENVIRONMENT: str = "production"  # development, staging, production
+    
+    # Logging
+    LOG_LEVEL: str = "INFO"  # DEBUG, INFO, WARNING, ERROR
+    
+    # Redis Cache (Optional - add when implementing caching)
+    REDIS_URL: Optional[str] = None  # "redis://localhost:6379"
+    CACHE_TTL: int = 300  # 5 minutes default cache
+    
+    # Rate Limiting
+    RATE_LIMIT_ENABLED: bool = True
+    RATE_LIMIT_PER_MINUTE: int = 60
+    
+    # Performance
+    ENABLE_QUERY_LOGGING: bool = False  # Set to False in production
+    
+    # Background Tasks
+    ENABLE_BACKGROUND_TASKS: bool = True
+    LOCATION_LOOKUP_ASYNC: bool = True  # Lookup location in background
     
     class Config:
         env_file = ".env"
