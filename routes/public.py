@@ -6,7 +6,7 @@ import logging
 
 from database import get_db
 from models import QRCode, QRScan
-from utils import parse_device_info, get_location_from_gps
+from utils import parse_device_info, get_location_from_ip, get_location_from_gps
 from config import settings
 
 router = APIRouter(tags=["Public"])
@@ -185,11 +185,13 @@ async def log_scan(
         # Get location - GPS if available, else IP
         location_data = None
         if latitude and longitude:
+            logger.info(f"Using GPS: lat={latitude}, lon={longitude}, accuracy={accuracy}m")
             location_data = await get_location_from_gps(latitude, longitude)
-            logger.info(f"GPS location: {location_data}")
+            logger.info(f"GPS location result: {location_data}")
         else:
-            location_data = await get_location_from_gps(ip_address)
-            logger.info(f"IP location: {location_data}")
+            logger.info(f"GPS not available, using IP: {ip_address}")
+            location_data = await get_location_from_ip(ip_address)
+            logger.info(f"IP location result: {location_data}")
         
         # Create scan record
         scan = QRScan(
