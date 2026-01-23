@@ -543,8 +543,11 @@ td{
     </div>
 </div>
 
+
+
 <script>
 const API = 'https://social-media-vmfr.onrender.com';
+let LAST_ANALYTICS = null;
 
 function getToken(){
     return localStorage.getItem('token');
@@ -567,7 +570,133 @@ function applyDates(){
 }
 
 function exportData(){
-    alert('Export functionality: Generate PDF/Excel report with current analytics data');
+    if(!LAST_ANALYTICS){
+        alert('No analytics data to export');
+        return;
+    }
+
+    const reportWindow = window.open('', '_blank');
+
+    reportWindow.document.write(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>QR Analytics Report</title>
+            <style>
+                body{font-family:Arial,sans-serif;padding:40px;color:#111}
+                h1{font-size:22px}
+                h2{font-size:16px;margin-top:30px}
+                table{width:100%;border-collapse:collapse;margin-top:10px}
+                th,td{border:1px solid #ccc;padding:8px;font-size:13px}
+                th{background:#f3f4f6;text-align:left}
+                .meta{margin-bottom:20px;font-size:13px}
+            </style>
+        </head>
+
+        <!-- ✅ print triggered safely -->
+        <body onload="window.print()">
+
+        <h1>QR Analytics Report</h1>
+
+        <div class="meta">
+            <p><strong>QR Code:</strong> ${document.getElementById('qrCodeName').textContent}</p>
+            <p><strong>Time Range:</strong> ${document.getElementById('timeRange').value}</p>
+            <p><strong>Exported At:</strong> ${new Date().toLocaleString()}</p>
+        </div>
+
+        <h2>Summary</h2>
+        <table>
+            <tr><th>Total Scans</th><td>${LAST_ANALYTICS.total_scans}</td></tr>
+            <tr><th>Scans Today</th><td>${LAST_ANALYTICS.scans_today}</td></tr>
+            <tr><th>Scans This Week</th><td>${LAST_ANALYTICS.scans_this_week}</td></tr>
+            <tr><th>Scans This Month</th><td>${LAST_ANALYTICS.scans_this_month}</td></tr>
+            <tr><th>Mobile %</th><td>${LAST_ANALYTICS.mobile_percentage}%</td></tr>
+        </table>
+
+        <h2>Scan Log (Filtered)</h2>
+        <table>
+            <tr>
+                <th>Timestamp</th>
+                <th>Device</th>
+                <th>Browser</th>
+                <th>City</th>
+                <th>Country</th>
+                <th>OS</th>
+            </tr>
+            ${
+                LAST_ANALYTICS.scan_log.map(scan => {
+                    const d = new Date(scan.scanned_at);
+                    const t = d.toLocaleString('en-IN', {
+                        year:'numeric',
+                        month:'2-digit',
+                        day:'2-digit',
+                        hour:'2-digit',
+                        minute:'2-digit',
+                        hour12:true
+                    });
+
+                    return `
+                        <tr>
+                            <td>${t}</td>
+                            <td>${scan.device_type || '-'}</td>
+                            <td>${scan.browser || '-'}</td>
+                            <td>${scan.city || '-'}</td>
+                            <td>${scan.country || '-'}</td>
+                            <td>${scan.os || '-'}</td>
+                        </tr>
+                    `;
+                }).join('')
+            }
+        </table>
+
+
+        </body>
+        </html>
+    `);
+
+    reportWindow.document.close();
+}
+
+
+
+function downloadCSV(data){
+    const rows = [];
+
+    // Header
+    rows.push([
+        'Timestamp',
+        'Device',
+        'Browser',
+        'City',
+        'Country',
+        'OS'
+    ]);
+
+    // Use filtered recent_scans OR scan_timestamps
+    data.recent_scans.forEach(scan => {
+        rows.push([
+            scan.scanned_at,
+            scan.device_type || '',
+            scan.browser || '',
+            scan.city || '',
+            scan.country || '',
+            scan.os || ''
+        ]);
+    });
+
+    const csvContent = rows
+        .map(r => r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(','))
+        .join('\n');
+
+    const blob = new Blob([csvContent], { type:'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `qr-analytics-export-${new Date().toISOString().slice(0,10)}.csv`;
+    link.click();
+
+    URL.revokeObjectURL(url);
 }
 
 async function loadQRList(){
@@ -615,6 +744,9 @@ async function loadAnalytics(){
     });
 
     const data = await res.json();
+
+    LAST_ANALYTICS = data;
+
     
     // Update QR name
     const qrRes = await fetch(`${API}/api/qr/${qrId}`,{
@@ -714,22 +846,25 @@ function renderDevices(data){
 
 function renderTable(data){
     const table = document.getElementById('scanTable');
-    
-    if(data.recent_scans.length === 0){
-        table.innerHTML = '<tr><td colspan="5" class="no-data">No recent scans</td></tr>';
+    const logs = data.scan_log || [];
+
+    if(logs.length === 0){
+        table.innerHTML =
+            '<tr><td colspan="5" class="no-data">No scans for selected filters</td></tr>';
         return;
     }
 
-    table.innerHTML = data.recent_scans.map(scan=>{
+    table.innerHTML = logs.map(scan => {
         const date = new Date(scan.scanned_at);
-        const time = date.toLocaleString('en-US', {
-            month:'2-digit',
-            day:'2-digit',
-            hour:'2-digit',
-            minute:'2-digit',
-            hour12:true
+        const time = date.toLocaleString('en-IN', {
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: true
         });
-        
+
         return `
             <tr>
                 <td>${time}</td>
@@ -741,6 +876,7 @@ function renderTable(data){
         `;
     }).join('');
 }
+
 
 checkAuth();
 loadQRList();
