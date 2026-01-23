@@ -678,35 +678,6 @@ async def get_qr_analytics(
 
         recent_scans = recent_result.scalars().all()
 
-        # --------------------------------------------------
-        # OPTIMIZED QUERY 5: FILTERED SCAN LOG (FOR UI + PDF)
-        # --------------------------------------------------
-        scan_log_result = await db.execute(
-            select(
-                QRScan.scanned_at,
-                QRScan.device_type,
-                QRScan.browser,
-                QRScan.city,
-                QRScan.country,
-                QRScan.os
-            )
-            .where(and_(*filters))
-            .order_by(QRScan.scanned_at.desc())
-            .limit(500)   # 👈 safe cap for PDF
-        )
-
-        scan_log = [
-            {
-                "scanned_at": r.scanned_at,
-                "device_type": r.device_type,
-                "browser": r.browser,
-                "city": r.city,
-                "country": r.country,
-                "os": r.os
-            }
-            for r in scan_log_result.all()
-        ]
-
         return {
             "qr_code_id": qr_id,
             "total_scans": total_scans,
@@ -719,9 +690,7 @@ async def get_qr_analytics(
             "top_cities": top_cities,
             "peak_hour": peak_hour,
             "hourly_breakdown": hourly_breakdown,
-            "recent_scans": recent_scans,
-            "scan_log": scan_log   # filtered by date + timezone
-
+            "recent_scans": recent_scans
         }
 
     except HTTPException:
