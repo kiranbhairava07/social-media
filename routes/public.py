@@ -6,7 +6,7 @@ import logging
 
 from database import get_db
 from models import QRCode, QRScan
-from utils import parse_device_info, get_location_from_ip
+from utils import parse_device_info, get_location_from_gps
 from config import settings
 
 router = APIRouter(tags=["Public"])
@@ -19,7 +19,7 @@ async def update_location_async(scan_id: int, ip_address: str, db_session: Async
     This prevents blocking the redirect response.
     """
     try:
-        location_data = await get_location_from_ip(ip_address)
+        location_data = await get_location_from_gps(ip_address)
         
         if location_data:
             async with db_session.begin():
@@ -107,7 +107,7 @@ async def redirect_qr(
             background_tasks.add_task(update_location_async, scan.id, ip_address, db)
         else:
             # If background tasks disabled, do it synchronously
-            location_data = await get_location_from_ip(ip_address)
+            location_data = await get_location_from_gps(ip_address)
             if location_data:
                 scan.country = location_data["country"]
                 scan.city = location_data["city"]
