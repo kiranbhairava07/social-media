@@ -1,8 +1,16 @@
-from fastapi import APIRouter, Request
-from fastapi.responses import HTMLResponse
+from fastapi import APIRouter, Request, Depends
+from fastapi.responses import HTMLResponse, JSONResponse
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select, func
 from pathlib import Path
+import logging
+
+from database import get_db
+from models import SocialClick
+from utils import parse_device_info, get_location_from_ip
 
 router = APIRouter(tags=["Social Links"])
+logger = logging.getLogger(__name__)
 
 # Path to templates directory
 TEMPLATES_DIR = Path("templates/social")
@@ -33,9 +41,100 @@ async def social_links_page(request: Request):
         return HTMLResponse(content=html_content)
     
     except Exception as e:
+        logger.error(f"Error loading social links page: {str(e)}", exc_info=True)
         return HTMLResponse(
             content=f"<h1>Error loading page: {str(e)}</h1>",
             status_code=500
+        )
+
+
+@router.post("/api/social-click")
+async def log_social_click(
+    request: Request,
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Track clicks on social media platform buttons.
+    Called from JavaScript when user clicks a social media link.
+    """
+    try:
+        data = await request.json()
+        platform = data.get("platform", "unknown")
+        user_agent = request.headers.get("user-agent", "")
+        
+        # Get IP address
+        ip_address = request.client.host if request.client else None
+        
+        # Parse device info
+        device_info = parse_device_info(user_agent)
+        
+        # Get location from IP
+        location_data = await get_location_from_ip(ip_address)
+        
+        # Create click record
+        click = SocialClick(
+            platform=platform,
+            device_type=device_info["device_type"],
+            browser=device_info["browser"],
+            os=device_info["os"],
+            ip_address=ip_address,
+            country=location_data.get("country") if location_data else None,
+            city=location_data.get("city") if location_data else None,
+            user_agent=user_agent
+        )
+        
+        db.add(click)
+        await db.commit()
+        
+        logger.info(f"Social click logged: {platform} from {ip_address}")
+        
+        return {"status": "success"}
+        
+    except Exception as e:
+        logger.error(f"Error logging social click: {str(e)}", exc_info=True)
+        return {"status": "error", "message": str(e)}
+
+
+@router.get("/api/social-analytics")
+async def get_social_analytics(
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Get analytics for social media platform clicks.
+    Returns total clicks per platform.
+    """
+    try:
+        # Get total clicks per platform
+        result = await db.execute(
+            select(
+                SocialClick.platform,
+                func.count(SocialClick.id).label('count')
+            )
+            .group_by(SocialClick.platform)
+            .order_by(func.count(SocialClick.id).desc())
+        )
+        
+        platform_stats = [
+            {"platform": row.platform, "count": row.count}
+            for row in result.all()
+        ]
+        
+        # Get total clicks
+        total_result = await db.execute(
+            select(func.count(SocialClick.id))
+        )
+        total_clicks = total_result.scalar()
+        
+        return {
+            "total_clicks": total_clicks,
+            "platforms": platform_stats
+        }
+        
+    except Exception as e:
+        logger.error(f"Error getting social analytics: {str(e)}", exc_info=True)
+        return JSONResponse(
+            status_code=500,
+            content={"error": "Failed to get analytics"}
         )
 
 
@@ -56,6 +155,7 @@ async def social_links_css():
             media_type="text/css"
         )
     except Exception as e:
+        logger.error(f"Error loading CSS: {str(e)}", exc_info=True)
         return HTMLResponse(content="", status_code=500)
 
 
@@ -92,4 +192,5 @@ async def social_links_images(image_name: str):
             media_type=media_type
         )
     except Exception as e:
+        logger.error(f"Error loading image: {str(e)}", exc_info=True)
         return HTMLResponse(content="Error", status_code=500)
