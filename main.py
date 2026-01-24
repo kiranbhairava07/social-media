@@ -176,6 +176,8 @@ import time
 from routes import auth, public, qr, social  # ADD social import
 from database import close_db_connections, check_db_connection
 from config import settings
+from fastapi.staticfiles import StaticFiles
+
 
 # Configure logging
 logging.basicConfig(
@@ -215,6 +217,13 @@ app = FastAPI(
     version="2.0.0",
     lifespan=lifespan,
     redoc_url="/api/redoc" if settings.ENVIRONMENT != "production" else None,
+)
+
+# Serve static files (CSS, images, icons)
+app.mount(
+    "/static",
+    StaticFiles(directory="templates"),
+    name="static"
 )
 
 
