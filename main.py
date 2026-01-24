@@ -165,7 +165,6 @@
 #         use_colors=True,
 #     )
 
-
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
@@ -173,11 +172,9 @@ from contextlib import asynccontextmanager
 import logging
 import time
 
-from routes import auth, public, qr, social  # ADD social import
+from routes import auth, public, qr, social
 from database import close_db_connections, check_db_connection
 from config import settings
-from fastapi.staticfiles import StaticFiles
-
 
 # Configure logging
 logging.basicConfig(
@@ -217,13 +214,6 @@ app = FastAPI(
     version="2.0.0",
     lifespan=lifespan,
     redoc_url="/api/redoc" if settings.ENVIRONMENT != "production" else None,
-)
-
-# Serve static files (CSS, images, icons)
-app.mount(
-    "/static",
-    StaticFiles(directory="templates"),
-    name="static"
 )
 
 
@@ -276,7 +266,7 @@ app.add_middleware(
 app.include_router(auth.router)
 app.include_router(public.router)
 app.include_router(qr.router)
-app.include_router(social.router)  # ADD THIS LINE
+app.include_router(social.router)
 
 
 # Serve static HTML files
@@ -293,6 +283,12 @@ async def dashboard():
 @app.get("/analytics")
 async def analytics():
     return FileResponse("templates/analytics.html")
+
+
+@app.get("/social-analytics")
+async def social_analytics():
+    """Serve the social media analytics page"""
+    return FileResponse("templates/social-analytics.html")
 
 
 # OPTIMIZED: Enhanced health check endpoint
