@@ -172,6 +172,8 @@ from contextlib import asynccontextmanager
 import logging
 import time
 
+from fastapi.staticfiles import StaticFiles
+
 from routes import auth, public, qr, social
 from database import close_db_connections, check_db_connection
 from config import settings
@@ -215,6 +217,8 @@ app = FastAPI(
     lifespan=lifespan,
     redoc_url="/api/redoc" if settings.ENVIRONMENT != "production" else None,
 )
+
+app.mount("/static", StaticFiles(directory="templates"), name="static")
 
 
 # OPTIMIZED: Request timing middleware
