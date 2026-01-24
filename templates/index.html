@@ -193,28 +193,87 @@
             margin-bottom: 4px;
             font-weight: 600;
         }
+
+        .login-header {
+            display: flex;
+            align-items: center;          /* vertical centering */
+            justify-content: center;
+            gap: 18px;
+            background: #3b8be1;
+            padding: 28px 32px;
+            color: white;
+        }
+
+        /* LOGO */
+        .login-header img {
+            width: 150px;
+            height: 100px;
+            object-fit: contain;
+            flex-shrink: 0;
+            display: block;
+            margin-left: -40px;               /* removes baseline gap */
+        }
+
+        /* TEXT CONTAINER */
+        .header-text {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            line-height: 1.2;
+        }
+
+        /* TEXT STYLES */
+        .header-text h1 {
+            font-size: 28px;
+            font-weight: 700;
+            margin: 0;
+            width: fit-content;
+        }
+
+        .header-text h2 {
+            font-size: 15px;
+            font-weight: 500;
+            margin: 2px 0 4px;
+            width: fit-content;
+        }
+
+        .header-text h3 {
+            font-size: 13px;
+            font-weight: 600;
+            width: fit-content;
+            margin: 0;
+            opacity: 0.9;
+            align-items: center;
+        }
     </style>
 </head>
 <body>
     <div class="login-container">
+        <div class="login-header">
         <img 
             src="static/social/gk.png" 
-            alt="GK Logo" 
-            style="width:80px; display:block; margin:20px auto;"
-        >
+            alt="GK Logo">
+            <div class="header-text">
+                <h1>Godavari-Krishna</h1>
+                <h2>Co-Operative Society Ltd.</h2>
+                <span>
+                <h3>Employee Login</h3></span>
+            </div>
+       
+        </div>
 
-        <div class="login-header">
+        <!-- <div class="login-header">
             <h1>Employee Login</h1>
             <p>QR Code Management System</p>
-        </div>
+        </div> -->
 
 
         <div class="login-form">
-            <div class="demo-credentials">
+            <!-- <div class="demo-credentials">
                 <strong>🔑 Demo Access</strong>
                 Email: marketing@company.com<br>
                 Password: marketing123
-            </div>
+            </div> -->
 
             <div class="error-message" id="errorMessage"></div>
             <div class="success-message" id="successMessage"></div>
