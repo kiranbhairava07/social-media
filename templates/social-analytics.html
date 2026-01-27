@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Social Media Analytics</title>
 <link rel="icon" type="image/png" href="static/social/gk.png"/>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 
 <style>
 :root {
@@ -159,6 +160,31 @@ body {
     border-radius: 12px;
     padding: 24px;
     box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    margin-bottom: 24px;
+}
+
+/* Professional Chart Section */
+.chart-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 32px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    margin-bottom: 32px;
+}
+
+.chart-title {
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 28px;
+    color: var(--text);
+    letter-spacing: -0.01em;
+}
+
+.chart-container {
+    position: relative;
+    height: 400px;
+    width: 100%;
 }
 
 .section-title {
@@ -303,6 +329,14 @@ body {
     .platforms-grid {
         grid-template-columns: 1fr;
     }
+    
+    .chart-container {
+        height: 300px;
+    }
+    
+    .chart-card {
+        padding: 20px;
+    }
 }
 </style>
 </head>
@@ -342,6 +376,14 @@ body {
         </div>
     </div>
 
+    <!-- Professional Chart -->
+    <div class="chart-card" id="chartSection" style="display:none;">
+        <h3 class="chart-title">Platform Performance Overview</h3>
+        <div class="chart-container">
+            <canvas id="platformChart"></canvas>
+        </div>
+    </div>
+
     <!-- Platform Breakdown -->
     <div class="platforms-section">
         <h2 class="section-title">Platform Breakdown</h2>
@@ -373,15 +415,128 @@ const platformLogos = {
     threads: 'static/social/threads.png'
 };
 
+let platformChart = null;
+
+function createProfessionalChart(platforms, totalClicks) {
+    const chartSection = document.getElementById('chartSection');
+    chartSection.style.display = 'block';
+    
+    const labels = platforms.map(p => p.platform.charAt(0).toUpperCase() + p.platform.slice(1));
+    const data = platforms.map(p => p.count);
+    
+    // Destroy existing chart if it exists
+    if (platformChart) platformChart.destroy();
+    
+    // Create professional monochrome bar chart
+    const ctx = document.getElementById('platformChart').getContext('2d');
+    platformChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Clicks',
+                data: data,
+                backgroundColor: '#3b82f6',
+                borderWidth: 0,
+                borderRadius: 4,
+                barThickness: 40
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    backgroundColor: '#1e293b',
+                    padding: 12,
+                    titleFont: {
+                        size: 13,
+                        weight: '600',
+                        family: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
+                    },
+                    bodyFont: {
+                        size: 13,
+                        family: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
+                    },
+                    displayColors: false,
+                    callbacks: {
+                        title: function(context) {
+                            return context[0].label;
+                        },
+                        label: function(context) {
+                            const value = context.parsed.y || 0;
+                            const percentage = ((value / totalClicks) * 100).toFixed(1);
+                            return `${value.toLocaleString()} clicks (${percentage}%)`;
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    border: {
+                        display: false
+                    },
+                    grid: {
+                        color: '#f1f5f9',
+                        lineWidth: 1
+                    },
+                    ticks: {
+                        callback: function(value) {
+                            return value.toLocaleString();
+                        },
+                        font: {
+                            size: 12,
+                            family: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
+                        },
+                        color: '#64748b',
+                        padding: 8
+                    }
+                },
+                x: {
+                    border: {
+                        display: false
+                    },
+                    grid: {
+                        display: false
+                    },
+                    ticks: {
+                        font: {
+                            size: 13,
+                            weight: '500',
+                            family: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
+                        },
+                        color: '#0f172a',
+                        padding: 8
+                    }
+                }
+            },
+            layout: {
+                padding: {
+                    top: 10,
+                    right: 10,
+                    bottom: 10,
+                    left: 10
+                }
+            }
+        }
+    });
+}
+
 async function loadSocialAnalytics() {
     const loadingState = document.getElementById('loadingState');
     const platformsGrid = document.getElementById('platformsGrid');
     const emptyState = document.getElementById('emptyState');
+    const chartSection = document.getElementById('chartSection');
 
     try {
         loadingState.style.display = 'flex';
         platformsGrid.style.display = 'none';
         emptyState.style.display = 'none';
+        chartSection.style.display = 'none';
 
         const res = await fetch(`${API}/api/social-analytics`);
         
@@ -405,6 +560,9 @@ async function loadSocialAnalytics() {
         const topPlatform = data.platforms[0];
         document.getElementById('topPlatform').textContent = topPlatform.platform.charAt(0).toUpperCase() + topPlatform.platform.slice(1);
         document.getElementById('topPlatformClicks').textContent = `${topPlatform.count.toLocaleString()} clicks`;
+
+        // Create professional chart
+        createProfessionalChart(data.platforms, data.total_clicks);
 
         // Render platforms
         platformsGrid.style.display = 'grid';
