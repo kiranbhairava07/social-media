@@ -4,7 +4,6 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>QR Analytics</title>
-<link rel="icon" type="image/png" href="static/social/gk.png"/>
 
 <style>
 :root{
@@ -218,19 +217,6 @@ body{
     margin-left:4px;
 }
 
-.device-circle{
-    width:180px;
-    height:180px;
-    border-radius:50%;
-    border:20px solid var(--primary);
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    margin:20px auto;
-    font-size:36px;
-    font-weight:700;
-}
-
 .device-list{
     margin-top:16px;
 }
@@ -241,6 +227,12 @@ body{
     gap:8px;
     margin-bottom:8px;
     font-size:13px;
+    padding:10px 0;
+    border-bottom:1px solid var(--border);
+}
+
+.device-item:last-child{
+    border-bottom:none;
 }
 
 .device-icon{
@@ -250,11 +242,13 @@ body{
 
 .device-label{
     flex:1;
-    color:var(--muted);
+    color:var(--text);
+    font-weight:500;
 }
 
 .device-value{
-    font-weight:600;
+    font-weight:700;
+    color:var(--primary);
 }
 
 .table-section{
@@ -412,7 +406,7 @@ td{
         </div>
         <div class="header-actions">
             <button class="btn" onclick="window.location.href='/dashboard'">← Dashboard</button>
-            <button class="btn btn-primary" onclick="exportPDF()">📊 Export PDF</button>
+            <button class="btn btn-primary" onclick="exportPDF()">Export PDF</button>
         </div>
     </div>
 
@@ -487,10 +481,9 @@ td{
 
         <div class="chart-section">
             <div class="section-header">
-                <div class="section-title">Device Insights</div>
+                <div class="section-title">Operating Systems</div>
             </div>
-            <div class="device-circle" id="deviceCircle">-</div>
-            <div class="device-list" id="deviceList"></div>
+            <div class="device-list" id="osList"></div>
         </div>
     </div>
 
@@ -619,11 +612,21 @@ async function loadQRList(){
             return;
         }
 
+        // Get QR ID from URL parameter
+        const urlParams = new URLSearchParams(window.location.search);
+        const selectedQRId = urlParams.get('qr');
+
         select.innerHTML = qrCodes.map(qr =>
-            `<option value="${qr.id}">${qr.code} (${qr.scan_count} scans)</option>`
+            `<option value="${qr.id}" ${selectedQRId && qr.id == selectedQRId ? 'selected' : ''}>${qr.code} (${qr.scan_count} scans)</option>`
         ).join('');
 
+        // If URL has qr parameter, select that QR code
+        if(selectedQRId) {
+            select.value = selectedQRId;
+        }
+
         loadAnalytics();
+
     }catch(err){
         console.error('Failed to load QR list:', err);
         hideLoading();
@@ -672,7 +675,7 @@ async function loadAnalytics(){
 
         renderStats(data);
         renderLocations(data);
-        renderDevices(data);
+        renderOSTypes(data);
         renderTable(data);
         renderPagination(data);
     }catch(err){
@@ -722,25 +725,35 @@ function renderLocations(data){
     }).join('');
 }
 
-function renderDevices(data){
-    const circle = document.getElementById('deviceCircle');
-    const list = document.getElementById('deviceList');
+function renderOSTypes(data){
+    const list = document.getElementById('osList');
     
-    circle.textContent = `${data.mobile_percentage}%`;
+    // Count OS from recent_scans
+    const osCounts = {};
+    data.recent_scans.forEach(scan => {
+        const os = scan.os || 'Unknown';
+        osCounts[os] = (osCounts[os] || 0) + 1;
+    });
     
-    const devices = [
-        {icon:'📱', label:'Mobile', value:data.device_breakdown.mobile},
-        {icon:'💻', label:'Desktop', value:data.device_breakdown.desktop},
-        {icon:'📲', label:'Tablet', value:data.device_breakdown.tablet}
-    ];
+    // Convert to array and sort by count
+    const osArray = Object.entries(osCounts)
+        .map(([os, count]) => ({os, count}))
+        .sort((a, b) => b.count - a.count);
     
-    list.innerHTML = devices.map(d=>`
-        <div class="device-item">
-            <span class="device-icon">${d.icon}</span>
-            <span class="device-label">${d.label}</span>
-            <span class="device-value">${d.value}</span>
-        </div>
-    `).join('');
+    if(osArray.length === 0){
+        list.innerHTML = '<div class="no-data">No OS data</div>';
+        return;
+    }
+    
+    list.innerHTML = osArray.map(item => {
+        return `
+            <div class="device-item">
+                <span class="device-icon">📳</span>
+                <span class="device-label">${item.os}</span>
+                <span class="device-value">${item.count}</span>
+            </div>
+        `;
+    }).join('');
 }
 
 function renderTable(data){
@@ -803,7 +816,6 @@ function exportPDF(){
         return;
     }
     
-    // Use browser's print dialog for now
     window.print();
 }
 
