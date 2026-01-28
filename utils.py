@@ -72,8 +72,8 @@ def parse_device_info(user_agent: str) -> Dict[str, str]:
         os = "Windows 8"
     elif 'windows nt 6.1' in ua:
         os = "Windows 7"
-    elif 'mac os x' in ua:
-        os = "macOS"
+    # elif 'mac os x' in ua:
+    #     os = "iOS"
     elif 'iphone os' in ua or 'cpu iphone' in ua:
         # Extract iOS version
         if 'os 17' in ua:
