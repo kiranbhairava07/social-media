@@ -1,9 +1,14 @@
+
 from pydantic_settings import BaseSettings
 from typing import Optional
+from dotenv import load_dotenv
+import os
+
+load_dotenv()
 
 class Settings(BaseSettings):
     # Database
-    DATABASE_URL: str = "postgresql+asyncpg://qr_manager_user:6Vnr63gWlKZvcfsvyF2W8BgxM3GkZQTw@dpg-d5ot6u24d50c739pp190-a.oregon-postgres.render.com:5432/qr_manager"
+    DATABASE_URL: str = os.getenv("DATABASE_URL", "")
     
     # Database Pool Settings (OPTIMIZED)
     DB_POOL_SIZE: int = 20  # Number of connections to maintain
