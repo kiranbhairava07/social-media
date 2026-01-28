@@ -3,6 +3,7 @@ from fastapi.responses import HTMLResponse, JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
 from pathlib import Path
+from typing import Optional
 import logging
 
 from database import get_db
@@ -97,36 +98,67 @@ async def log_social_click(
 
 @router.get("/api/social-analytics")
 async def get_social_analytics(
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
     db: AsyncSession = Depends(get_db)
 ):
     """
-    Get analytics for social media platform clicks.
+    Get analytics for social media platform clicks with optional date filtering.
     Returns total clicks per platform.
+    
+    Parameters:
+    - start_date: ISO format date string (YYYY-MM-DD) - optional
+    - end_date: ISO format date string (YYYY-MM-DD) - optional
     """
     try:
-        # Get total clicks per platform
-        result = await db.execute(
-            select(
-                SocialClick.platform,
-                func.count(SocialClick.id).label('count')
-            )
-            .group_by(SocialClick.platform)
-            .order_by(func.count(SocialClick.id).desc())
-        )
+        from datetime import datetime, timedelta
+        
+        # Build filters
+        filters = []
+        
+        if start_date:
+            try:
+                start_dt = datetime.fromisoformat(start_date)
+                filters.append(SocialClick.clicked_at >= start_dt)
+            except ValueError:
+                logger.warning(f"Invalid start_date format: {start_date}")
+        
+        if end_date:
+            try:
+                # End date should include the entire day
+                end_dt = datetime.fromisoformat(end_date)
+                end_dt = end_dt + timedelta(days=1) - timedelta(seconds=1)
+                filters.append(SocialClick.clicked_at <= end_dt)
+            except ValueError:
+                logger.warning(f"Invalid end_date format: {end_date}")
+        
+        # Get total clicks per platform with filters
+        query = select(
+            SocialClick.platform,
+            func.count(SocialClick.id).label('count')
+        ).group_by(SocialClick.platform).order_by(func.count(SocialClick.id).desc())
+        
+        if filters:
+            from sqlalchemy import and_
+            query = query.where(and_(*filters))
+        
+        result = await db.execute(query)
         
         platform_stats = [
             {"platform": row.platform, "count": row.count}
             for row in result.all()
         ]
         
-        # Get total clicks
-        total_result = await db.execute(
-            select(func.count(SocialClick.id))
-        )
+        # Get total clicks with filters
+        total_query = select(func.count(SocialClick.id))
+        if filters:
+            total_query = total_query.where(and_(*filters))
+        
+        total_result = await db.execute(total_query)
         total_clicks = total_result.scalar()
         
         return {
-            "total_clicks": total_clicks,
+            "total_clicks": total_clicks or 0,
             "platforms": platform_stats
         }
         
@@ -136,6 +168,7 @@ async def get_social_analytics(
             status_code=500,
             content={"error": "Failed to get analytics"}
         )
+
 
 
 @router.get("/social-links/styles.css")
