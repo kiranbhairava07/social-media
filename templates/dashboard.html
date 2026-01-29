@@ -793,6 +793,14 @@ function updateStats(qrs) {
     document.getElementById('totalQRs').textContent = qrs.length;
     document.getElementById('totalScans').textContent = qrs.reduce((sum, qr) => sum + qr.scan_count, 0);
     document.getElementById('activeQRs').textContent = qrs.filter(qr => qr.is_active).length;
+    document.getElementById('monthScans').textContent = qrs.reduce((sum, qr) => {
+        const createdAt = new Date(qr.created_at);
+        const now = new Date();
+        if (createdAt.getMonth() === now.getMonth() && createdAt.getFullYear() === now.getFullYear()) {
+            return sum + qr.scan_count;
+        }
+        return sum;
+    }, 0);
 }
 
 // Search
