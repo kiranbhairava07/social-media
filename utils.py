@@ -44,8 +44,8 @@ def parse_device_info(user_agent: str) -> Dict[str, str]:
         device_name = "Windows PC"
     elif 'macintosh' in ua or 'mac os' in ua:
         device_name = "Mac"
-    elif 'linux' in ua:
-        device_name = "Linux PC"
+    # elif 'linux' in ua:
+    #     device_name = "Linux PC"
     elif 'android' in ua:
         device_name = "Android Device"
     
@@ -94,8 +94,8 @@ def parse_device_info(user_agent: str) -> Dict[str, str]:
         os = "Android 11"
     elif 'android' in ua:
         os = "Android"
-    elif 'linux' in ua:
-        os = "Linux"
+    # elif 'linux' in ua:
+    #     os = "Linux"
     
     return {
         "device_type": device_type,

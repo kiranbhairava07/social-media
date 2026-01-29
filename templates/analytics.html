@@ -4,6 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>QR Analytics</title>
+<link rel="icon" type="image/png" href="static/social/gk.png"/>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 
 <style>
@@ -168,16 +169,18 @@ body{
 .chart-section{
     background:var(--card);
     border:1px solid var(--border);
-    border-radius:10px;
+    border-radius:12px;
     padding:20px;
+    box-shadow:0 4px 10px rgba(0,0,0,0.04);
 }
 
+
 .section-header{
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-    margin-bottom:16px;
+    margin-bottom:14px;
+    padding-bottom:8px;
+    border-bottom:1px solid var(--border);
 }
+
 
 .section-title{
     font-size:14px;
@@ -384,6 +387,50 @@ td{
     animation:spin 1s linear infinite;
 }
 
+.social-content{
+    display:grid;
+    grid-template-columns:220px 1fr;
+    gap:32px;
+    align-items:center;
+}
+
+#socialPieChart{
+    width:100% !important;
+    height:320px !important;
+}
+.social-stat{
+    background:#f1f5f9;
+    border-radius:12px;
+    padding:20px;
+    text-align:center;
+}
+
+.social-label{
+    font-size:12px;
+    color:var(--muted);
+    font-weight:600;
+    text-transform:uppercase;
+    letter-spacing:.5px;
+}
+
+.social-value{
+    font-size:40px;
+    font-weight:800;
+    color:var(--primary);
+    margin-top:6px;
+}
+
+.social-chart-wrap{
+    width:100%;
+    height:215px;   /* controls chart height */
+}
+
+#socialPieChart{
+    width:100% !important;
+    height:100% !important;
+}
+
+
 @keyframes spin{
     to{transform:rotate(360deg)}
 }
@@ -493,12 +540,12 @@ td{
             <div class="section-title">📱 Social Media Analytics</div>
         </div>
         <div style="padding:20px">
-            <div id="socialContent" style="display:grid;grid-template-columns:1fr 2fr;gap:24px;align-items:center">
-                <div style="text-align:center">
-                    <div style="font-size:12px;color:var(--muted);margin-bottom:8px">Total Clicks</div>
-                    <div style="font-size:36px;font-weight:700;color:var(--primary)" id="totalSocialClicks">0</div>
+            <div id="socialContent" class="social-content">
+                <div class="social-stat">
+                    <div class="social-label">Total Clicks</div>
+                    <div class="social-value" id="totalSocialClicks">0</div>
                 </div>
-                <div style="max-width:400px;margin:0 auto">
+                <div class="social-chart-wrap">
                     <canvas id="socialPieChart"></canvas>
                 </div>
             </div>
@@ -846,70 +893,73 @@ function exportPDF(){
 
 let socialChart = null;
 
-async function loadSocialAnalytics(){
+async function loadSocialAnalytics() {
     const loading = document.getElementById('socialLoading');
     const content = document.getElementById('socialContent');
     const empty = document.getElementById('socialEmpty');
-    
-    loading.style.display = 'block';
+
+    loading.style.display = 'flex';
     content.style.display = 'none';
     empty.style.display = 'none';
-    
-    try{
+
+    try {
         const timeRange = document.getElementById('timeRange').value;
         const params = new URLSearchParams();
-        
-        if(timeRange === 'custom'){
+
+        if (timeRange === 'custom') {
             const start = document.getElementById('startDate').value;
             const end = document.getElementById('endDate').value;
-            if(start && end){
+            if (start && end) {
                 params.append('start_date', start);
                 params.append('end_date', end);
             }
-        }else if(timeRange !== 'all'){
+        } else if (timeRange !== 'all') {
             const now = new Date();
-            const daysMap = {today: 0, '7days': 7, '30days': 30, '90days': 90};
+            const daysMap = { today: 0, '7days': 7, '30days': 30, '90days': 90 };
             const days = daysMap[timeRange];
-            if(days !== undefined){
+
+            if (days !== undefined) {
                 const startDate = new Date(now);
                 startDate.setDate(startDate.getDate() - days);
+
                 params.append('start_date', startDate.toISOString().split('T')[0]);
                 params.append('end_date', now.toISOString().split('T')[0]);
             }
         }
-        
+
         let url = `${API}/api/social-analytics`;
-        if(params.toString()) url += '?' + params.toString();
-        
+        if (params.toString()) url += '?' + params.toString();
+
         const res = await fetch(url);
-        
-        if(!res.ok) throw new Error('Failed to load social analytics');
-        
+        if (!res.ok) throw new Error('Failed to load social analytics');
+
         const data = await res.json();
-        
+        LAST_ANALYTICS = data;
+
         document.getElementById('totalSocialClicks').textContent = data.total_clicks || 0;
-        
-        if(data.total_clicks === 0){
+
+        if (!data.platforms || data.total_clicks === 0) {
             empty.style.display = 'block';
-        }else{
+        } else {
             content.style.display = 'grid';
-            renderSocialPieChart(data.platforms);
+            renderSocialBarChart(data.platforms);
         }
-    }catch(err){
+
+    } catch (err) {
         console.error('Error loading social analytics:', err);
         empty.style.display = 'block';
-    }finally{
+    } finally {
         loading.style.display = 'none';
     }
 }
 
-function renderSocialPieChart(platforms){
+function renderSocialBarChart(platforms) {
     const ctx = document.getElementById('socialPieChart').getContext('2d');
-    
-    if(socialChart){
+
+    if (socialChart) {
         socialChart.destroy();
     }
-    
+
     const colors = {
         facebook: '#1877F2',
         instagram: '#E4405F',
@@ -918,51 +968,87 @@ function renderSocialPieChart(platforms){
         whatsapp: '#25D366',
         threads: '#000000'
     };
-    
-    const labels = platforms.map(p => p.platform.charAt(0).toUpperCase() + p.platform.slice(1));
-    const data = platforms.map(p => p.count);
-    const backgroundColors = platforms.map(p => colors[p.platform.toLowerCase()] || '#6366F1');
-    
+
+    const labels = platforms.map(p =>
+        p.platform.charAt(0).toUpperCase() + p.platform.slice(1)
+    );
+
+    const values = platforms.map(p => p.count);
+
+    const backgroundColors = platforms.map(p =>
+        colors[p.platform.toLowerCase()] || '#6366F1'
+    );
+
     socialChart = new Chart(ctx, {
-        type: 'pie',
+        type: 'bar',
         data: {
-            labels: labels,
+            labels,
             datasets: [{
-                data: data,
+                label: 'Clicks by Platform',
+                data: values,
                 backgroundColor: backgroundColors,
-                borderWidth: 2,
-                borderColor: '#fff'
+                borderRadius: 6,
+                barThickness: 45
             }]
         },
         options: {
             responsive: true,
-            maintainAspectRatio: true,
+            maintainAspectRatio: false,
+            layout: {
+                padding: 20
+            },
             plugins: {
                 legend: {
-                    position: 'right',
-                    labels: {
-                        padding: 12,
-                        font: {
-                            size: 12,
-                            family: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
-                        }
-                    }
+                    display: false
                 },
                 tooltip: {
+                    backgroundColor: '#111827',
+                    titleColor: '#fff',
+                    bodyColor: '#e5e7eb',
+                    padding: 12,
                     callbacks: {
-                        label: function(context){
-                            const label = context.label || '';
-                            const value = context.parsed || 0;
+                        label: function (context) {
                             const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                            const value = context.raw;
                             const percentage = ((value / total) * 100).toFixed(1);
-                            return `${label}: ${value} (${percentage}%)`;
+                            return ` ${value} clicks (${percentage}%)`;
                         }
                     }
                 }
+            },
+            scales: {
+                x: {
+                    grid: {
+                        display: false
+                    },
+                    ticks: {
+                        font: {
+                            size: 12,
+                            weight: '600'
+                        }
+                    }
+                },
+                y: {
+                    beginAtZero: true,
+                    grid: {
+                        color: '#e5e7eb'
+                    },
+                    ticks: {
+                        stepSize: 1,
+                        font: {
+                            size: 11
+                        }
+                    }
+                }
+            },
+            animation: {
+                duration: 800,
+                easing: 'easeOutQuart'
             }
         }
     });
 }
+
 
 checkAuth();
 loadQRList();
