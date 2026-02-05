@@ -28,16 +28,16 @@
     
 #     # Check database connection
 #     if await check_db_connection():
-#         logger.info("✅ Database connection successful")
+#         logger.info(" Database connection successful")
 #     else:
-#         logger.error("❌ Database connection failed")
+#         logger.error(" Database connection failed")
     
 #     yield
     
 #     # Shutdown
 #     logger.info("Shutting down QR Manager API")
 #     await close_db_connections()
-#     logger.info("✅ All connections closed gracefully")
+#     logger.info(" All connections closed gracefully")
 
 
 # # OPTIMIZED: Create FastAPI app with lifespan
@@ -197,16 +197,16 @@ async def lifespan(app: FastAPI):
     
     # Check database connection
     if await check_db_connection():
-        logger.info("✅ Database connection successful")
+        logger.info(" Database connection successful")
     else:
-        logger.error("❌ Database connection failed")
+        logger.error(" Database connection failed")
     
     yield
     
     # Shutdown
     logger.info("Shutting down QR Manager API")
     await close_db_connections()
-    logger.info("✅ All connections closed gracefully")
+    logger.info(" All connections closed gracefully")
 
 
 # OPTIMIZED: Create FastAPI app with lifespan

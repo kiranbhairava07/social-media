@@ -21,7 +21,7 @@ def test_complete_flow():
     
     token = response.json()["access_token"]
     headers = {"Authorization": f"Bearer {token}"}
-    print("✅ Login successful")
+    print(" Login successful")
     
     # Step 2: Create test QR code
     print("\n2️⃣ Creating test QR code...")
@@ -38,7 +38,7 @@ def test_complete_flow():
     )
     
     if response.status_code == 201:
-        print(f"✅ QR code created: {test_code}")
+        print(f" QR code created: {test_code}")
         qr_data = response.json()
         print(f"   Target URL: {test_target}")
         print(f"   QR ID: {qr_data['id']}")
@@ -69,12 +69,12 @@ def test_complete_flow():
     print("=" * 60)
     
     if response.status_code == 302:
-        print("✅ Status code is correct (302 redirect)")
+        print(" Status code is correct (302 redirect)")
     else:
         print(f"❌ Wrong status code: {response.status_code} (expected 302)")
     
     if actual_location == expected_location:
-        print(f"✅ Redirect target is correct")
+        print(f" Redirect target is correct")
         print(f"   Expected: {expected_location}")
         print(f"   Got:      {actual_location}")
     else:
@@ -93,7 +93,7 @@ def test_complete_flow():
         qr_codes = response.json()
         for qr in qr_codes:
             if qr['code'] == test_code:
-                print(f"✅ Scan was logged! Total scans: {qr['scan_count']}")
+                print(f" Scan was logged! Total scans: {qr['scan_count']}")
                 break
     
     print("\n" + "=" * 60)

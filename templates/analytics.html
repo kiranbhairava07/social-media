@@ -930,7 +930,15 @@ async function loadSocialAnalytics() {
         let url = `${API}/api/social-analytics`;
         if (params.toString()) url += '?' + params.toString();
 
-        const res = await fetch(url);
+        const res = await fetch(url, {
+            headers: { Authorization: `Bearer ${getToken()}` }
+        });
+        
+        if (res.status === 401) {
+            logout();
+            return;
+        }
+        
         if (!res.ok) throw new Error('Failed to load social analytics');
 
         const data = await res.json();

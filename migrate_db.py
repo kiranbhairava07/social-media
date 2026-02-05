@@ -6,8 +6,8 @@ async def migrate_database():
     Recreate tables with new schema.
     WARNING: This will delete all existing data!
     """
-    print("🚀 Starting database migration...")
-    print("⚠️  WARNING: This will delete all existing data!")
+    print(" Starting database migration...")
+    print("  WARNING: This will delete all existing data!")
     
     confirm = input("Continue? (yes/no): ")
     if confirm.lower() != "yes":
@@ -23,8 +23,8 @@ async def migrate_database():
         print("Creating new tables...")
         await conn.run_sync(Base.metadata.create_all)
     
-    print("✅ Database migration complete!")
-    print("\n📝 Next steps:")
+    print(" Database migration complete!")
+    print("\n Next steps:")
     print("1. Run: python init_db.py  (to create default user)")
     print("2. Restart your server")
 

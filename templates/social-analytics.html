@@ -350,7 +350,10 @@ body {
             <img src="static/social/gk.png" alt="GK Logo">
             QR Manager - Social Analytics
         </div>
-        <a href="/dashboard" class="btn">← Back to Dashboard</a>
+        <div style="display: flex; gap: 12px;">
+            <a href="/dashboard" class="btn">← Back to Dashboard</a>
+            <button class="btn" onclick="logout()" style="cursor: pointer;">Logout</button>
+        </div>
     </div>
 </header>
 
@@ -404,6 +407,22 @@ body {
 
 <script>
 const API = 'https://social-media-vmfr.onrender.com';
+
+// Authentication functions
+function getToken() {
+    return localStorage.getItem('token');
+}
+
+function logout() {
+    localStorage.removeItem('token');
+    window.location.href = '/';
+}
+
+function checkAuth() {
+    if (!getToken()) {
+        window.location.href = '/';
+    }
+}
 
 // Map platform names to their logo image paths
 const platformLogos = {
@@ -538,7 +557,14 @@ async function loadSocialAnalytics() {
         emptyState.style.display = 'none';
         chartSection.style.display = 'none';
 
-        const res = await fetch(`${API}/api/social-analytics`);
+        const res = await fetch(`${API}/api/social-analytics`, {
+            headers: { Authorization: `Bearer ${getToken()}` }
+        });
+        
+        if (res.status === 401) {
+            logout();
+            return;
+        }
         
         if (!res.ok) throw new Error('Failed to load analytics');
         
@@ -595,6 +621,9 @@ async function loadSocialAnalytics() {
         document.getElementById('topPlatform').textContent = 'Error';
     }
 }
+
+// Check authentication
+checkAuth();
 
 // Load analytics on page load
 loadSocialAnalytics();

@@ -28,13 +28,13 @@ class Settings(BaseSettings):
     # Logging
     LOG_LEVEL: str = "INFO"  # DEBUG, INFO, WARNING, ERROR
     
-    # Redis Cache (Optional - add when implementing caching)
-    REDIS_URL: Optional[str] = None  # "redis://localhost:6379"
-    CACHE_TTL: int = 300  # 5 minutes default cache
+    # # Redis Cache (Optional - add when implementing caching)
+    # REDIS_URL: Optional[str] = None  # "redis://localhost:6379"
+    # CACHE_TTL: int = 300  # 5 minutes default cache
     
-    # Rate Limiting
-    RATE_LIMIT_ENABLED: bool = True
-    RATE_LIMIT_PER_MINUTE: int = 60
+    # # Rate Limiting
+    # RATE_LIMIT_ENABLED: bool = True
+    # RATE_LIMIT_PER_MINUTE: int = 60
     
     # Performance
     ENABLE_QUERY_LOGGING: bool = False  # Set to False in production

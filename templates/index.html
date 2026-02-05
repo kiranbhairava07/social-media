@@ -315,13 +315,13 @@
         const successMessage = document.getElementById('successMessage');
 
         function showError(message) {
-            errorMessage.textContent = '❌ ' + message;
+            errorMessage.textContent = ' ' + message;
             errorMessage.classList.add('show');
             successMessage.classList.remove('show');
         }
 
         function showSuccess(message) {
-            successMessage.textContent = '✅ ' + message;
+            successMessage.textContent = ' ' + message;
             successMessage.classList.add('show');
             errorMessage.classList.remove('show');
         }

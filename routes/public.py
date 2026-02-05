@@ -23,11 +23,12 @@ async def redirect_qr(
     db: AsyncSession = Depends(get_db)
 ):
     """
-    Show GPS permission page, then redirect to target URL.
+    Instantly redirect to target URL and log scan in background.
+    No GPS, no permission UI.
     """
     try:
         result = await db.execute(
-            select(QRCode.id, QRCode.target_url, QRCode.is_active, QRCode.code)
+            select(QRCode.id, QRCode.target_url, QRCode.is_active)
             .where(QRCode.code == code)
         )
         qr_data = result.one_or_none()
@@ -35,126 +36,44 @@ async def redirect_qr(
         if not qr_data:
             raise HTTPException(status_code=404, detail=f"QR code '{code}' not found")
         
-        qr_id, target_url, is_active, qr_code = qr_data
+        qr_id, target_url, is_active = qr_data
         
         if not is_active:
             raise HTTPException(status_code=410, detail="This QR code has been deactivated")
-        
-        # Return GPS permission page
+
         html_content = f"""
 <!DOCTYPE html>
 <html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Redirecting...</title>
-    <style>
-        body {{
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: 0;
-            padding: 20px;
-        }}
-        .container {{
-            background: white;
-            border-radius: 16px;
-            padding: 40px;
-            max-width: 400px;
-            text-align: center;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-        }}
-        .icon {{ font-size: 48px; margin-bottom: 16px; }}
-        h1 {{ color: #1a202c; margin-bottom: 8px; font-size: 20px; }}
-        p {{ color: #718096; font-size: 14px; margin-bottom: 20px; }}
-        .spinner {{
-            border: 3px solid #e2e8f0;
-            border-top: 3px solid #667eea;
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            animation: spin 1s linear infinite;
-            margin: 20px auto;
-        }}
-        @keyframes spin {{
-            0% {{ transform: rotate(0deg); }}
-            100% {{ transform: rotate(360deg); }}
-        }}
-    </style>
+    <meta http-equiv="refresh" content="0;url={target_url}">
+    <script>
+        // Fire-and-forget logging
+        fetch("{settings.BASE_URL}/api/scan-log", {{
+            method: "POST",
+            headers: {{ "Content-Type": "application/json" }},
+            body: JSON.stringify({{
+                qr_code_id: {qr_id},
+                user_agent: navigator.userAgent
+            }})
+        }}).catch(() => {{}});
+
+        // Fallback redirect if meta refresh fails
+        window.location.href = "{target_url}";
+    </script>
 </head>
 <body>
-    <div class="container">
-        <div class="icon">📍</div>
-        <h1>Redirecting...</h1>
-        <p id="status">Detecting your location...</p>
-        <div class="spinner"></div>
-    </div>
-    
-    <script>
-        const QR_ID = {qr_id};
-        const TARGET_URL = "{target_url}";
-        const API = "{settings.BASE_URL}";
-        
-        async function logScan(lat, lon, accuracy) {{
-            const userAgent = navigator.userAgent;
-            
-            try {{
-                await fetch(`${{API}}/api/scan-log`, {{
-                    method: 'POST',
-                    headers: {{ 'Content-Type': 'application/json' }},
-                    body: JSON.stringify({{
-                        qr_code_id: QR_ID,
-                        latitude: lat,
-                        longitude: lon,
-                        accuracy: accuracy,
-                        user_agent: userAgent
-                    }})
-                }});
-            }} catch (e) {{
-                console.log('Log failed:', e);
-            }}
-            
-            // Redirect to target
-            window.location.href = TARGET_URL;
-        }}
-        
-        // Try GPS first
-        if (navigator.geolocation) {{
-            navigator.geolocation.getCurrentPosition(
-                (position) => {{
-                    // GPS success - use coordinates
-                    logScan(
-                        position.coords.latitude,
-                        position.coords.longitude,
-                        position.coords.accuracy
-                    );
-                }},
-                (error) => {{
-                    // GPS denied/failed - use IP fallback
-                    document.getElementById('status').textContent = 'Redirecting...';
-                    logScan(null, null, null);
-                }},
-                {{ timeout: 5000 }}
-            );
-        }} else {{
-            // No GPS support - redirect immediately
-            logScan(null, null, null);
-        }}
-    </script>
+    Redirecting...
 </body>
 </html>
-        """
-        
+"""
         return HTMLResponse(content=html_content)
-        
+
     except HTTPException:
         raise
     except Exception as e:
         logger.error(f"Error in redirect_qr: {str(e)}", exc_info=True)
         raise HTTPException(status_code=500, detail="Internal server error")
+
 
 
 # ============================================

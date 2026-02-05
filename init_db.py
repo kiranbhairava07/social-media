@@ -13,7 +13,7 @@ async def create_tables():
         await conn.run_sync(Base.metadata.drop_all)
         # Create all tables
         await conn.run_sync(Base.metadata.create_all)
-    print("✅ Database tables created successfully")
+    print(" Database tables created successfully")
 
 
 async def create_default_user():
@@ -34,11 +34,11 @@ async def create_default_user():
             )
             session.add(default_user)
             await session.commit()
-            print("✅ Default user created:")
+            print(" Default user created:")
             print("   Email: marketing@company.com")
             print("   Password: marketing123")
         else:
-            print("⚠️  Default user already exists")
+            print("  Default user already exists")
 
 
 async def create_sample_qr():
@@ -67,18 +67,18 @@ async def create_sample_qr():
             )
             session.add(sample_qr)
             await session.commit()
-            print("✅ Sample QR code created: demo-2024")
+            print(" Sample QR code created: demo-2024")
         else:
-            print("⚠️  Sample QR code already exists")
+            print("  Sample QR code already exists")
 
 
 async def init_database():
     """Main initialization function"""
-    print("🚀 Initializing database...")
+    print(" Initializing database...")
     await create_tables()
     await create_default_user()
     await create_sample_qr()
-    print("🎉 Database initialization complete!")
+    print(" Database initialization complete!")
 
 
 if __name__ == "__main__":
